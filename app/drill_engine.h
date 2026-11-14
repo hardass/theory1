@@ -40,7 +40,6 @@ typedef struct {
     uint8_t assist, mode;
     uint8_t bpm, sub;                   /* notes a minute (sub is 1: one note a beat, one click a note) */
     uint8_t ioi_tol;                    /* 0 loose 45%, 1 normal 35%, 2 tight 25% */
-    int8_t oct_base;                    /* the sequence's octave, from C4 (60): -1 puts it lower on a 27-key drill */
     uint8_t exact;                      /* 1: the note itself, not its pitch class: the FM-1's own 27 keys */
 
     /* the sequence */
@@ -71,7 +70,12 @@ void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_
 /* the classical melodic minor's descent (drill_build's semi_down when the scale is SC_MELMINOR) */
 extern const uint8_t DRILL_MELODIC_DOWN[7];
 
-/* where a one-octave shape fits on the FM-1's own 27 keys (F3..G5, MIDI 53..79): the tonic's octave, -1 or 0 from C4 */
+/* the keys the lights can reach: F3..G5 */
+#define DRILL_KEY_LO 53
+#define DRILL_KEY_HI 79
+
+/* the octave the sequence starts in: the lowest tonic the keys can show, so that the example climbs from a root the
+ * player can see upwards (on the 27 keys it is also where the shape fits, and a one-octave shape always does) */
 int8_t drill_oct_base(uint8_t root_pc);
 
 /* what the app keeps (drill_engine.c has no storage): its own store object, so THEORY-1's settings and records are

@@ -187,7 +187,7 @@ expect screen 1
 
 # --- on the FM-1's own 27 keys: one octave, placed where it fits, and the note itself is judged
 drill 0 0 0 0
-tap SEL
+tap ENV
 expect dkb 1
 expect dlen 15
 dgo
@@ -209,7 +209,7 @@ expect screen 1
 
 # --- and back to a piano of one's own: the octave is taken from the player's first note
 drill 0 0 0 0
-tap SEL
+tap ENV
 expect dkb 0
 dgo
 wait 4200

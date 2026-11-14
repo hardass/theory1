@@ -81,7 +81,8 @@ static int push(drill_ctx_t *c, int midi, int dir)
 
 void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_t *semi_down, uint8_t root_pc)
 {
-    int octs = c->shape == 0 ? 1 : 2, i, oct, base = 60 + (int)root_pc + 12 * (int)c->oct_base, top;
+    int octs = c->shape == 0 ? 1 : 2, i, oct, top;
+    int base = 60 + (int)root_pc + 12 * (int)drill_oct_base(root_pc);
     const uint8_t *tab = c->hand ? FINGER_L[c->root_idx % DRILL_NUM_ROOTS] : FINGER_R[c->root_idx % DRILL_NUM_ROOTS];
     uint8_t topfix = c->hand ? TOP_L[c->root_idx % DRILL_NUM_ROOTS] : TOP_R[c->root_idx % DRILL_NUM_ROOTS];
     c->n = 0;
@@ -127,8 +128,17 @@ void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_
     }
 }
 
-/* the tonic's octave for the 27 keys: C4 (60) unless the shape would run off the top of the keyboard */
-int8_t drill_oct_base(uint8_t root_pc) { return (uint8_t)(60 + root_pc) > 67u ? -1 : 0; }
+/* the lowest tonic the keys can show (F3, MIDI 53): the example starts there and climbs, so as much of it as possible
+ * lands on keys that light */
+int8_t drill_oct_base(uint8_t root_pc)
+{
+    int base = 60 + (int)root_pc, oct = 0;
+    while (base - 12 >= DRILL_KEY_LO)
+        base -= 12, oct--;
+    while (base < DRILL_KEY_LO)
+        base += 12, oct++;
+    return (int8_t)oct;
+}
 
 void drill_start(drill_ctx_t *c, uint32_t now)
 {

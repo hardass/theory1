@@ -812,7 +812,6 @@ static void drill_setup(void)
     dr.bpm = ds.bpm;
     dr.sub = ds.sub;
     dr.ioi_tol = ds.ioi_tol;
-    dr.oct_base = ds.kb == DRILL_KB_27 ? drill_oct_base(DRILL_PC[ds.root_idx]) : 0;
     dr.exact = (uint8_t)(ds.kb == DRILL_KB_27);
     drill_build(&dr, SCALES[ds.scale_idx].semi, SCALES[ds.scale_idx].n,
                 ds.scale_idx == SC_MELMINOR ? DRILL_MELODIC_DOWN : 0, DRILL_PC[ds.root_idx]);
@@ -925,18 +924,16 @@ static const char *drill_verdict(void)
     }
 }
 
-/* one line of the knobs' legend: "K1 CHIAVE  Do" */
-static void drill_knob_line(int32_t y, const char *k1, const char *v1, const char *k2, const char *v2)
+/* one cell of the knobs' legend: "K3: BPM 60" (the two columns line up: K1 over K3, K2 over K4) */
+static void drill_knob_cell(int32_t x, int32_t y, const char *k, const char *label, const char *val)
 {
-    char t[48];
-    t1_strcpy(t, k1);
+    char t[40];
+    t1_strcpy(t, k);
+    str_cat(t, ": ");
+    str_cat(t, label);
     str_cat(t, " ");
-    str_cat(t, v1);
-    str_cat(t, "   ");
-    str_cat(t, k2);
-    str_cat(t, " ");
-    str_cat(t, v2);
-    t1_tx(8, y, t1_tw(&FONT_XS, t) <= 224 ? &FONT_XS : &FONT_T, t, C_GRAY);
+    str_cat(t, val);
+    t1_tx(x, y, t1_tw(&FONT_XS, t) <= 112 ? &FONT_XS : &FONT_T, t, C_GRAY);
 }
 
 static void draw_drill(void)
@@ -944,7 +941,9 @@ static void draw_drill(void)
     char t[64], u[24], v[16], key[16];
     const scale_t *s = &SCALES[ds.scale_idx];
     note_name(nt_of_pc(DRILL_PC[ds.root_idx]), key);
-    ui_header("DRILL", S(ds.kb == DRILL_KB_27 ? S_D_KB27 : S_D_KBEXT), ds.kb == DRILL_KB_27 ? COL_ROOT : C_HI);
+    t1_strcpy(v, S(ds.kb == DRILL_KB_27 ? S_D_KB27 : S_D_KBEXT));
+    str_cat(v, ds.hand ? " L" : " R");
+    ui_header("DRILL", v, ds.kb == DRILL_KB_27 ? COL_ROOT : C_HI);
     t1_strcpy(t, key);
     str_cat(t, " ");
     str_cat(t, s->name[th_ui]);
@@ -993,10 +992,11 @@ static void draw_drill(void)
     default: break;
     }
     /* the knobs the hint line does not name, with what they are set to now */
+    drill_knob_cell(8, 140, "K1", S(S_D_K1), key);
+    drill_knob_cell(124, 140, "K2", S(S_D_K2), drill_shape());
     int_str(v, ds.bpm);
-    str_cat(v, "");
-    drill_knob_line(140, S(S_D_K1), key, S(S_D_K2), drill_shape());
-    drill_knob_line(156, S(S_D_K3), v, S(S_D_K4), S(S_D_A0 + (int)ds.assist));
+    drill_knob_cell(8, 156, "K3", S(S_D_K3), v);
+    drill_knob_cell(124, 156, "K4", S(S_D_K4), S(S_D_A0 + (int)ds.assist));
     hint(S(S_H_DRILL));
 }
 
@@ -2672,10 +2672,6 @@ static void ui_enter(void)
             q_answer_choice();
         break;
     case SCR_QEND: quiz_start(); break;
-    case SCR_DRILL:                          /* SEL: the piano of your own, or the FM-1's 27 keys */
-        ds.kb = (uint8_t)!ds.kb;
-        drill_changed();
-        break;
     case SCR_SETTINGS: settings_change(1); break;
     default: break;
     }
@@ -2774,16 +2770,16 @@ static void ui_encoder(int e, int d)
         } else if (e == EN_K1 || e == EN_PRESET) {   /* the root */
             ds.root_idx = (uint8_t)t1_wrap(ds.root_idx + d, 12);
             drill_changed();
-        } else if (e == EN_K2) {             /* the shape (on the 27 keys there is only the one octave) */
-            if (ds.kb != DRILL_KB_27) {
-                uint8_t was = ds.shape;
-                ds.shape = (uint8_t)t1_wrap(ds.shape + d, DRILL_NUM_SHAPES);
-                drill_setup();
-                if (ds.shape > was)         /* a longer shape costs speed; a shorter one is not a new skill */
-                    drill_dim(&dr);
-                ds.bpm = dr.bpm;
-                drill_changed();
-            }
+        } else if (e == EN_K2) {             /* the shape: longer shapes need a piano of your own */
+            uint8_t was = ds.shape;
+            ds.shape = (uint8_t)t1_wrap(ds.shape + d, DRILL_NUM_SHAPES);
+            if (ds.shape != 0)
+                ds.kb = DRILL_KB_EXT;
+            drill_setup();
+            if (ds.shape > was)             /* a longer shape costs speed; a shorter one is not a new skill */
+                drill_dim(&dr);
+            ds.bpm = dr.bpm;
+            drill_changed();
         } else if (e == EN_K3) {             /* the tempo, a beat a minute at a time */
             int b = (int)ds.bpm + (d < 0 ? -1 : 1);
             ds.bpm = (uint8_t)(b < 40 ? 40 : b > 200 ? 200 : b);
@@ -2857,6 +2853,12 @@ static void ui_button(int b)
     case B_SAVE:                              /* (nothing changed: nothing written) */
         settings_save();
         app_say(S(set_dirty ? S_SAY_ERROR : S_SAY_SAVED), "");
+        return;
+    case B_ENV:                              /* where the hands are: a piano of your own, or the 27 keys */
+        if (ui.screen != SCR_DRILL)
+            return;
+        ds.kb = (uint8_t)!ds.kb;
+        drill_changed();
         return;
     case B_REC: ble_device_button(); return;
     default: break;

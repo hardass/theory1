@@ -191,6 +191,16 @@ static void check_speed(void)
     want("the slowest note", drill_note_ms(&c), 1500);
     c.bpm = 200;
     want("the fastest note", drill_note_ms(&c), 300);
+    /* A major climbs from A3 (57) to A4 (69): the example starts at the lowest root the keys can show, so no note of a
+     * one-octave shape runs off the right end (docs/DRILL.md: the preview's window) */
+    {
+        drill_ctx_t a;
+        build(&a, SC_MAJOR, 3, 0, 0);
+        want("A major starts on A3", a.seq[0].midi, 57);
+        want("A major tops on A4", a.seq[7].midi, 69);
+        want("and the top is a little finger", a.seq[7].finger, 5);
+        want("and comes back to the root", a.seq[a.n - 1].midi, 57);
+    }
     /* the 27 keys: a one-octave shape always fits F3..G5 (53..79) */
     {
         int r;

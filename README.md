@@ -110,22 +110,27 @@ In the lessons and the lab, **EDIT** steps through the naming systems without op
 
 ## The drill (SCALE DRILL)
 
-The tenth row of **LESSONS** is not a lesson but a practice machine. Pick a scale, a key, a shape (one octave, two
-octaves, up and down or up only) and the FM-1 becomes a coach: the keys light up, you play on the FM-1 itself or on a
-piano over USB, TRS or Bluetooth, and every note is judged as it comes.
+The tenth row of **LESSONS** is not a lesson but a practice machine: pick a scale, a key, a shape and a tempo, and the
+FM-1 becomes a coach. The keys light up, you play on the FM-1's own keys or on a piano over USB, TRS or Bluetooth, and
+every note is judged as it comes. The controls are the ones the rest of the firmware already uses: **SELECT** the
+scale, **K1** the key, **K2** the shape, **K3** the tempo (BPM, one note a beat) and **K4** how much the lights help
+(GUIDE, FRAME, ANCHOR, BLIND); **ENV** switches between a piano of your own and the 27 keys, **ALGORITHM** between the
+right and the left hand's fingering, **PLAY** starts a round.
 
 - **The next key is bright**, the rest of the scale half-lit, the root in its own colour. A wrong note blinks red, the
   round stops there and the answer stays lit until you play it (the wait mode of the paid practice apps).
-- **Four levels of help** fade by themselves: GUIDE (names and fingers), FRAME (no names), ANCHOR (only the roots),
-  BLIND (nothing). A clean round costs one level of help and gains 8 notes a minute; three wrong notes give it back.
+- **Four levels of help** fade by themselves on a clean round, and the tempo gains 8 notes a minute; three wrong notes
+  give one level back and lose 8.
 - **Fingering** is shown for the seven-note scales, with the thumb-under and cross-over points marked: the one thing
-  that stalls a scale is a wide turn, so a stumble there does not earn the faster tempo even if every note was right.
-- **REC** plays the shape at the drill's own tempo, **PLAY** starts a round, **EDIT** changes the level of help,
-  **SAVE** runs one blind round and keeps the record, **K1..K4** are the key, the scale, the shape and the speed, and
-  **ALGORITHM** switches the hand (right or left fingerings).
-- All 22 scales of the lessons are here, from the major to the 13 scales of the world; the classical melodic minor
-  comes down as the natural minor, as it should. Best speeds are kept per scale, key and shape, in an object of their
-  own (the quiz records are never touched).
+  that stalls a scale is a wide turn, so a stumble there does not earn the faster tempo even when every note was right.
+- **On the 27 keys** the drill gives one octave, placed where it fits between two roots you can see; a longer shape
+  switches to a piano of your own. All 22 scales of the lessons are here, and the classical melodic minor comes down as
+  the natural minor.
+- Every setting change plays the shape once, so the ear knows what the hand is about to do. The best tempo is kept per
+  scale, key and shape in an object of its own (the quiz records are never touched).
+
+`docs/DRILL.md` has the whole story: the judgement, the ladder, the tests, and where the implementation departs from
+the specification it was built from.
 
 ## More screens
 
@@ -205,7 +210,7 @@ python3 docs/make_graphics.py                            # this README's picture
 | `app/synthlab.c` | The SYNTH section's screens: the chapters, the pictures, the knobs and the steps |
 | `app/synth_lessons.h` | The SYNTH chapters, pages and words in 5 languages, made by `app/tools/gen_synth.py` |
 | `app/app.c` | The screens, the accented letters, the lessons, the quiz, the lab, the settings, the keys and MIDI |
-| `app/drill_engine.{h,c}` | SCALE DRILL's engine: the sequence and its fingering, the judging (pitch, the octave the player sits in, the gaps between notes), the ladder and a round's verdict. Plain C, tested on its own |
+| `app/drill_engine.{h,c}` | SCALE DRILL's engine: the sequence and its fingering, the judging (pitch, the octave the player sits in, the gaps between notes), the ladder and a round's verdict. Plain C, tested on its own. `docs/DRILL.md` is its design |
 | `app/staff_glyphs.h` | The clefs, the notehead, the sharp and the flat, from the [Bravura](https://github.com/steinbergmedia/bravura) music font (SIL OFL 1.1), made by `app/tools/make_glyphs.py` |
 | `app/tests/` | `theory_test.c`, `drill_test.c` (the drill's sequence, fingerings, judging and ladder), `basic.txt` (every quiz, the lab, the settings), `questions.txt` (13200 generated questions checked), `texts_fit.txt` (every page in every language, every clef, fits the screen), `synth.txt` (every SYNTH page in every language, every step's goal), `drill.txt` (the drill: a stumble at a turn, the ladder, a blind round), `screens.txt`, `flow.txt`, `clefs.txt`; `gen_tests.py` writes the long ones |
 | `docs/make_graphics.py` | The README's pictures, made from the simulator's screens |
