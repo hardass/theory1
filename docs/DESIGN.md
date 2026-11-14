@@ -1,4 +1,7 @@
-# FM-1 SCALE DRILL — 设计文稿 v0.1（待评审）
+# FM-1 SCALE DRILL — 设计文稿 v0.1（已由 SPEC-v1.0.md 取代）
+
+> **注意**：本文件是第一版草稿，保留作历史。实现以 `SPEC-v1.0.md`（需求）+ `REVIEW-v1.0.md`（核查）+ `IMPL-NOTES.md`（偏差）为准；
+> 与本文件不一致的地方（入口、型态定义、音阶库范围、灯光映射等）以那三份为准。
 
 > 目标设备：M-VAVE FM-1（27 键带键灯、240×240 彩屏、4 旋钮 + SELECT 编码器、USB/BLE/TRS 三重 MIDI）
 > 底座：THEORY-1（`github.com/wave00066/theory1`，MPL-2.0，基于 `fm1-base`）
