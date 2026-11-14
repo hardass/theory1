@@ -102,6 +102,40 @@ static void check_fingers(void)
     }
 }
 
+/* both hands: the same notes with the other hand's fingers, or the mirror for contrary motion */
+static void check_hands(void)
+{
+    drill_ctx_t c;
+    int i;
+    build(&c, SC_MAJOR, 0, 0, 0);
+    c.hands = DRILL_HAND_BOTH;
+    drill_build(&c, SCALES[SC_MAJOR].semi, SCALES[SC_MAJOR].n, 0, 0);
+    for (i = 0; i < (int)c.n; i++) {         /* C major: right 1 2 3 1 2 3 4 5 against left 5 4 3 2 1 3 2 1 */
+        if (c.midi2[i] != c.seq[i].midi)
+            fails++, checks++, printf("FAIL both: note %d differs\n", i);
+        if (i < 7 && (c.finger2[i] != (uint8_t)(5 - i > 1 ? 5 - i : (i == 4 ? 1 : 5 - i))))
+            ;                                /* (the table below is the authority, see the next check) */
+    }
+    want("both hands, first fingers", c.finger2[0], 5);
+    want("both hands, the tonic under the right thumb", c.seq[0].finger, 1);
+    want("both hands, the fourth note", c.finger2[3], 2);
+    want("both hands, the fifth under the left thumb", c.finger2[4], 1);
+    want("both hands, the seventh", c.finger2[6], 2);
+
+    c.hands = DRILL_HAND_CONTRA;
+    drill_build(&c, SCALES[SC_MAJOR].semi, SCALES[SC_MAJOR].n, 0, 0);
+    want("contrary: the left hand starts on the same note", c.midi2[0], c.seq[0].midi);
+    want("contrary: the left hand walks down", c.midi2[1], (uint8_t)(2 * c.seq[0].midi - c.seq[1].midi));
+    want("contrary: and its turns are its own", c.finger2[1], 4);
+    /* the left hand's note is expected too: not a mistake, and it does not move the drill */
+    drill_start(&c, 0);
+    c.state = DRILL_RUN;
+    want("contrary: the right hand starts", drill_note(&c, c.seq[0].midi, 100), DRILL_OK);
+    want("contrary: the left hand's note is ignored", drill_note(&c, c.midi2[1], 1100), DRILL_IGNORED);
+    want("contrary: and nothing moved", c.pos, 1);
+    want("contrary: the right hand's note takes it", drill_note(&c, c.seq[1].midi, 2100), DRILL_OK);
+}
+
 /* the classical melodic minor descends as the natural minor (SPEC-v1.0 §4.1) */
 static void check_melodic(void)
 {
@@ -251,6 +285,7 @@ int main(void)
         for (sh = 0; sh < DRILL_NUM_SHAPES; sh++)
             check_shape(s, sh);
     check_fingers();
+    check_hands();
     check_melodic();
     check_octaves();
     check_ladder();

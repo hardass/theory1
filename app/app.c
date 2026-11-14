@@ -74,7 +74,7 @@ void app_render(int32_t *lr, uint32_t n, uint32_t master_q12)
 void app_panic(void) { synth_panic(); }
 
 /* the examples: notes at times, played from the main loop */
-#define NPEV 96
+#define NPEV 128
 static struct {
     uint32_t t;
     uint8_t note, on, vel, used;
@@ -777,7 +777,7 @@ static void drill_load(void)
     uint8_t *p = (uint8_t *)&ds;
     int ok = plat_store_load(OBJ_DRILL, &ds, sizeof ds) == (int)sizeof ds;
     ok = ok && ds.magic == DS_MAGIC && ds.ver == 2 && ds.root_idx < 12 && ds.scale_idx < NSCALES &&
-         ds.shape < DRILL_NUM_SHAPES && ds.hand <= 1 && ds.assist < NASSIST && ds.kb <= 1 &&
+         ds.shape < DRILL_NUM_SHAPES && ds.hand < NHANDS && ds.assist < NASSIST && ds.kb <= 1 &&
          ds.ioi_tol <= 2 && ds.bpm >= 40 && ds.bpm <= 200 && ds.sub >= 1 && ds.sub <= 4;
     if (!ok) {
         for (i = 0; i < sizeof ds; i++)
@@ -805,12 +805,14 @@ static void drill_setup(void)
     drill_defaults(&dr);
     if (ds.kb == DRILL_KB_27) {
         ds.shape = 0;                        /* two octaves do not fit 27 keys (F3..G5) */
+        ds.hand = (uint8_t)(ds.hand ? DRILL_HAND_LH : DRILL_HAND_RH);   /* two hands: only on a piano */
         ui.octave = 0;                       /* the keys must sound what the sequence asks */
     }
     dr.root_idx = ds.root_idx;
     dr.scale_idx = ds.scale_idx;
     dr.shape = ds.shape;
-    dr.hand = ds.hand;
+    dr.hand = (uint8_t)(ds.hand >= DRILL_HAND_BOTH ? (ds.hand == DRILL_HAND_LH ? 1 : 0) : ds.hand);
+    dr.hands = ds.hand;
     dr.assist = ds.assist;
     dr.mode = ds.mode;
     dr.bpm = ds.bpm;
@@ -835,6 +837,8 @@ static void drill_preview(void)
     play_stop();
     for (i = 0; i < (int)dr.n; i++) {
         play_note(t, dr.seq[i].midi, DRILL_PREVIEW_MS - 40u, 85);
+        if (dr.hands == DRILL_HAND_CONTRA /* the left hand walks the other way */)
+            play_note(t, dr.midi2[i], DRILL_PREVIEW_MS - 40u, 70);
         t += DRILL_PREVIEW_MS;
     }
     drill_prev_at = plat_ms() + 40u;
@@ -957,8 +961,11 @@ static void drill_lights(void)
     if (dr.assist <= DRILL_FRAME) {
         mk.scale = (uint16_t)(scale & ~root);
         mk.root = root;
-        if ((dr.state == DRILL_RUN || dr.state == DRILL_HOLD) && dr.pos < dr.n)
+        if ((dr.state == DRILL_RUN || dr.state == DRILL_HOLD) && dr.pos < dr.n) {
             mk.ok = (uint16_t)PCB(dr.seq[dr.pos].pc);
+            if (dr.hands >= DRILL_HAND_BOTH)
+                mk.ok |= (uint16_t)PCB(dr.midi2[dr.pos] % 12);
+        }
     } else if (dr.assist == DRILL_ANCHOR) {
         mk.root = root;
     }
@@ -1007,7 +1014,9 @@ static void draw_drill(void)
     const scale_t *s = &SCALES[ds.scale_idx];
     note_name(nt_of_pc(DRILL_PC[ds.root_idx]), key);
     t1_strcpy(v, S(ds.kb == DRILL_KB_27 ? S_D_KB27 : S_D_KBEXT));
-    str_cat(v, ds.hand ? " LH" : " RH");      /* left or right hand: whose fingering is shown */
+    str_cat(v, " ");
+    str_cat(v, ds.hand == DRILL_HAND_RH ? "RH" : ds.hand == DRILL_HAND_LH ? "LH" :
+              S(ds.hand == DRILL_HAND_BOTH ? S_D_HBOTH : S_D_HCONTRA));
     ui_header("DRILL", v, ds.kb == DRILL_KB_27 ? COL_ROOT : C_HI);
     t1_strcpy(t, key);
     str_cat(t, " ");
@@ -1037,6 +1046,11 @@ static void draw_drill(void)
                 str_cat(t, "  ");
                 int_str(v, e->finger);
                 str_cat(t, v);
+                if (dr.hands >= DRILL_HAND_BOTH && dr.finger2[k]) {   /* the other hand's finger beside it */
+                    str_cat(t, "/");
+                    int_str(v, dr.finger2[k]);
+                    str_cat(t, v);
+                }
             }
             if (e->turn)
                 str_cat(t, S(S_D_TURN));
@@ -1062,6 +1076,11 @@ static void draw_drill(void)
                     str_cat(t, "  ");
                 int_str(v, e->finger);
                 str_cat(t, v);
+                if (dr.hands >= DRILL_HAND_BOTH && dr.finger2[dr.pos]) {   /* the other hand, beside it */
+                    str_cat(t, "/");
+                    int_str(v, dr.finger2[dr.pos]);
+                    str_cat(t, v);
+                }
             }
             if (e->turn)
                 str_cat(t, S(S_D_TURN));
@@ -2879,8 +2898,9 @@ static void ui_encoder(int e, int d)
             dr.assist = ds.assist;
             drill_dirty = 1;
             ui.redraw = 1;
-        } else if (e == EN_ALGO) {           /* the hand whose fingering is shown */
-            ds.hand = (uint8_t)!ds.hand;
+        } else if (e == EN_ALGO) {           /* whose hand: RH, LH, then both and contrary on a piano */
+            uint8_t n = ds.kb == DRILL_KB_27 ? 2 : NHANDS;
+            ds.hand = (uint8_t)t1_wrap(ds.hand + d, n);
             drill_changed();
         }
         break;
@@ -3289,6 +3309,8 @@ int app_expect(const char *what, int *got)
         *got = dr.assist;
     else if (!strcmp(what, "dmiss"))
         *got = dr.misses;
+    else if (!strcmp(what, "dhand"))
+        *got = ds.hand;
     else if (!strcmp(what, "dtry"))
         *got = drill_try;
     else if (!strcmp(what, "dkb"))

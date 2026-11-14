@@ -21,7 +21,7 @@ the root, K2..K4 the rest**. The hint line, the two legend columns and the heade
 | **K2** | the shape: 1 octave up and down, 2 octaves up and down, 2 octaves up |
 | **K3** | the tempo, one BPM at a time (40..200) |
 | **K4** | how much the lights help: GUIDE, FRAME, ANCHOR, BLIND - and it can be turned in the middle of a round without stopping it |
-| **ALGORITHM** | whose fingering is shown: `RH` or `LH`, right or left hand (in the header) |
+| **ALGORITHM** | whose fingering is shown, in the header: `RH`, `LH`, and - on a piano of your own - `BOTH` (hands together) and `CONTR.` (contrary motion) |
 | **ENV** | where the hands are: `PIANO` (your own keyboard) or `27 TASTI` (the FM-1's own keys) |
 | **PLAY** | start a round (four beats of count-in, then the first note); pressed again, it stops the round and puts the screen back where it started |
 | **before PLAY** | the keys are a map, not a test: play any key of the scale and the screen names the note, its finger and whether it is a turn, and the corner says which note of the shape it is |
@@ -63,6 +63,20 @@ therefore gives one octave, and a longer shape switches to `PIANO` rather than d
 Both modes start the sequence at **the lowest root the keys can show**: A major climbs A3 to A4, not A4 to A5, so no
 note of a one-octave shape runs off the right end of the keyboard. A two-octave shape climbs from that same lowest root
 and the top of it will leave the lights behind - which is the honest limit of a 27-key display, not a bug.
+
+## One hand, both hands
+
+| ALGORITHM | What the drill does |
+|---|---|
+| `RH` / `LH` | the sequence with that hand's fingering; PLAY judges it as usual |
+| `BOTH` | both hands on the same notes: the screen shows `1/5` (right thumb, left little finger) and either hand's note counts, because they are the same note |
+| `CONTR.` | contrary motion: the left hand walks the other way - the mirror of the shape around the tonic - and the lights show both keys. The left hand's note is expected, so it is never counted as a mistake; the right hand's note is what moves the round |
+
+Judging is still one stream of notes: a single MIDI channel cannot say which hand played. So `BOTH` cannot tell whether
+you really used both hands, and `CONTR.` judges the right hand and leaves the left alone. The screen and the lights are
+the honest part of those two modes - they show the fingering and the two notes, they do not police them.
+
+On the 27 keys there are only `RH` and `LH`: two hands on one small keyboard is not a thing to teach.
 
 ## The sequence
 

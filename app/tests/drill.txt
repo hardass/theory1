@@ -277,6 +277,47 @@ tap HOME
 wait 50
 expect screen 1
 
+# --- the hand: RH, LH, and on a piano both and contrary; on the 27 keys only the two hands
+drill 0 0 0 0
+expect dhand 0
+turn ALGO 1
+expect dhand 1
+turn ALGO 1
+expect dhand 2
+tap PLAY
+wait 4200
+expect dstate 2
+dnote 60
+expect dpos 1
+tap PLAY
+wait 30
+turn ALGO 1
+expect dhand 3
+tap PLAY
+wait 4200
+expect dstate 2
+dnote 60
+expect dpos 1
+wait 1000
+dnote 58
+expect dstate 2
+expect dpos 1
+wait 1000
+dnote 62
+expect dpos 2
+tap PLAY
+wait 30
+tap ENV
+expect dkb 1
+expect dhand 1
+turn ALGO 1
+expect dhand 0
+tap ENV
+expect dkb 0
+tap HOME
+wait 50
+expect screen 1
+
 # --- a longer shape costs a third of the speed; a shorter one gives nothing back; K3 is the speed itself
 drill 0 0 0 0
 turn K2 1

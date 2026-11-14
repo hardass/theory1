@@ -120,6 +120,20 @@ void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_
             c->seq[i].finger = m >= 0 ? c->seq[m].finger : 0;
         }
     }
+    /* both hands: the other hand's fingers at every step, and its notes (the same ones, or the mirror of the tonic
+     * for contrary motion, where the left hand walks down as the right walks up) */
+    if (c->hands >= DRILL_HAND_BOTH) {
+        drill_ctx_t t;
+        drill_defaults(&t);
+        t.root_idx = c->root_idx;
+        t.shape = c->shape;
+        t.hand = (uint8_t)!c->hand;
+        drill_build(&t, semi_up, n, semi_down, root_pc);
+        for (i = 0; i < (int)c->n; i++) {
+            c->finger2[i] = t.seq[i].finger;
+            c->midi2[i] = (uint8_t)(c->hands == DRILL_HAND_CONTRA ? 2 * base - (int)c->seq[i].midi : c->seq[i].midi);
+        }
+    }
     /* the turns: a thumb under (the note before took three or more), or a finger over a thumb */
     c->seq[0].turn = 0;
     for (i = 1; i < (int)c->n; i++) {
@@ -269,6 +283,10 @@ int drill_note(drill_ctx_t *c, int note, uint32_t now)
     if (c->pos > 0 && c->prev_ok != 255 && (uint8_t)note == c->prev_ok && (uint32_t)(now - c->t_ok) < 120u)
         return DRILL_IGNORED;                    /* the same key struck again: a bounced key, not a mistake */
     e = &c->seq[c->pos];
+    /* with both hands the other hand's note is expected too: it is not a mistake, and it does not move the drill */
+    if (c->hands >= DRILL_HAND_BOTH && c->pos < c->n && c->midi2[c->pos] != e->midi &&
+        (uint8_t)(note % 12) == (uint8_t)(c->midi2[c->pos] % 12))
+        return DRILL_IGNORED;
     if (c->exact)
         return note == (int)e->midi ? ok(c, note, now) : wrong(c, note, now);
     if (!c->oct_lock) {

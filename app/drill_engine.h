@@ -21,6 +21,8 @@ enum { DRILL_GUIDE, DRILL_FRAME, DRILL_ANCHOR, DRILL_BLIND, NASSIST };
 enum { DRILL_PRACTICE, DRILL_STAGE };
 /* where the player's hands are: a piano of their own, or the FM-1's 27 keys (one octave, and it fits) */
 enum { DRILL_KB_EXT, DRILL_KB_27 };
+/* whose hand the drill follows: one, or both at once (in parallel, or in contrary motion) */
+enum { DRILL_HAND_RH, DRILL_HAND_LH, DRILL_HAND_BOTH, DRILL_HAND_CONTRA, NHANDS };
 /* the states */
 enum { DRILL_IDLE, DRILL_COUNTIN, DRILL_RUN, DRILL_HOLD, DRILL_VERDICT, DRILL_SUMMARY, NSTATE };
 /* what drill_note() did */
@@ -44,6 +46,9 @@ typedef struct {
 
     /* the sequence */
     drill_note_t seq[DRILL_MAX_SEQ];
+    uint8_t finger2[DRILL_MAX_SEQ];      /* the other hand's finger, when both play */
+    uint8_t midi2[DRILL_MAX_SEQ];        /* and its note: the same one, or the mirror in contrary motion */
+    uint8_t hands;                       /* DRILL_HAND_* */
     uint8_t n, pos;
 
     /* the round */

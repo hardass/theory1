@@ -30,6 +30,7 @@ enum {
     S_T_DRILL, S_T_DRILL_SUB, S_D_SHAPE0, S_D_SHAPE1, S_D_SHAPE2, S_D_READY, S_D_TURN, S_D_WAIT, S_D_GO, S_D_NEXT,
     S_D_ERRS, S_D_UNEVEN_1, S_D_BEST, S_H_DRILL, S_D_CLEAN, S_D_FADE, S_D_TURNSLOW, S_D_ERRORS, S_D_UNEVEN, S_D_WATCH,
     S_D_PASS, S_D_STEADY, S_D_K1, S_D_K2, S_D_K3, S_D_K4, S_D_KB27, S_D_KBEXT, S_D_A0, S_D_A1, S_D_A2, S_D_A3,
+    S_D_HBOTH, S_D_HCONTRA,
     NSTR
 };
 
@@ -323,6 +324,8 @@ static const char *const STR[NSTR][NLANGS] = {
     [S_D_A1] = {"FRAME", "FRAME", "FRAME", "FRAME", "FRAME"},
     [S_D_A2] = {"ANCHOR", "ANCHOR", "ANCHOR", "ANCHOR", "ANCHOR"},
     [S_D_A3] = {"BLIND", "BLIND", "BLIND", "BLIND", "BLIND"},
+    [S_D_HBOTH] = {"BOTH", "BOTH", "AMBAS", "BEIDE", "DEUX"},
+    [S_D_HCONTRA] = {"CONTR.", "CONTR.", "CONTR.", "GEGEN", "CONTRA"},
     [S_D_KB27] = {"27 TASTI", "27 KEYS", "27 TECLAS", "27 TASTEN", "27 TOUCHES"},
     [S_D_KBEXT] = {"PIANO", "PIANO", "PIANO", "KLAVIER", "PIANO"},
 };
