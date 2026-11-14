@@ -17,8 +17,10 @@
 
 /* the assistance: the lights fade, the screen hides more */
 enum { DRILL_GUIDE, DRILL_FRAME, DRILL_ANCHOR, DRILL_BLIND, NASSIST };
-/* practice (the ladder runs) or stage (blind, fixed speed, a record) */
+/* practice (the ladder runs) or stage (blind, fixed speed); stage is kept for the engine's tests only */
 enum { DRILL_PRACTICE, DRILL_STAGE };
+/* where the player's hands are: a piano of their own, or the FM-1's 27 keys (one octave, and it fits) */
+enum { DRILL_KB_EXT, DRILL_KB_27 };
 /* the states */
 enum { DRILL_IDLE, DRILL_COUNTIN, DRILL_RUN, DRILL_HOLD, DRILL_VERDICT, DRILL_SUMMARY, NSTATE };
 /* what drill_note() did */
@@ -36,8 +38,10 @@ typedef struct {
     /* the settings */
     uint8_t root_idx, scale_idx, shape, hand;
     uint8_t assist, mode;
-    uint8_t bpm, sub;                   /* sub notes a beat */
+    uint8_t bpm, sub;                   /* notes a minute (sub is 1: one note a beat, one click a note) */
     uint8_t ioi_tol;                    /* 0 loose 45%, 1 normal 35%, 2 tight 25% */
+    int8_t oct_base;                    /* the sequence's octave, from C4 (60): -1 puts it lower on a 27-key drill */
+    uint8_t exact;                      /* 1: the note itself, not its pitch class: the FM-1's own 27 keys */
 
     /* the sequence */
     drill_note_t seq[DRILL_MAX_SEQ];
@@ -67,14 +71,17 @@ void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_
 /* the classical melodic minor's descent (drill_build's semi_down when the scale is SC_MELMINOR) */
 extern const uint8_t DRILL_MELODIC_DOWN[7];
 
+/* where a one-octave shape fits on the FM-1's own 27 keys (F3..G5, MIDI 53..79): the tonic's octave, -1 or 0 from C4 */
+int8_t drill_oct_base(uint8_t root_pc);
+
 /* what the app keeps (drill_engine.c has no storage): its own store object, so THEORY-1's settings and records are
  * never rewritten by an upgrade (docs/REVIEW-v1.0.md B1) */
 typedef struct {
     uint32_t magic;
-    uint8_t ver;
-    uint8_t root_idx, scale_idx, shape, hand, assist, mode, ioi_tol;
+    uint8_t ver;                        /* 2: bpm is notes a minute itself, and there is a keyboard mode */
+    uint8_t root_idx, scale_idx, shape, hand, assist, mode, ioi_tol, kb;
     uint8_t bpm, sub;
-    uint8_t best[DRILL_NUM_SCALES][DRILL_NUM_ROOTS][DRILL_NUM_SHAPES];   /* notes a minute / 2, 0: none */
+    uint8_t best[DRILL_NUM_SCALES][DRILL_NUM_ROOTS][DRILL_NUM_SHAPES];   /* the fastest clean round, 0: none */
     uint8_t stage[(DRILL_NUM_SCALES * DRILL_NUM_ROOTS * DRILL_NUM_SHAPES + 7) / 8];   /* a STAGE round passed */
 } drill_save_t;
 

@@ -29,7 +29,7 @@ enum {
     S_Q_EARNOTES2, S_SET_CLEFS,
     S_T_DRILL, S_T_DRILL_SUB, S_D_SHAPE0, S_D_SHAPE1, S_D_SHAPE2, S_D_READY, S_D_TURN, S_D_WAIT, S_D_GO, S_D_NEXT,
     S_D_ERRS, S_D_UNEVEN_1, S_D_BEST, S_H_DRILL, S_D_CLEAN, S_D_FADE, S_D_TURNSLOW, S_D_ERRORS, S_D_UNEVEN, S_D_WATCH,
-    S_D_PASS, S_D_STEADY,
+    S_D_PASS, S_D_STEADY, S_D_K1, S_D_K2, S_D_K3, S_D_K4, S_D_KB27, S_D_KBEXT,
     NSTR
 };
 
@@ -305,8 +305,8 @@ static const char *const STR[NSTR][NLANGS] = {
     [S_D_ERRS] = {"err", "err", "err", "Fehler", "err"},
     [S_D_UNEVEN_1] = {"irreg", "uneven", "irreg.", "unreg.", "irrég."},
     [S_D_BEST] = {"best", "best", "mejor", "best", "mieux"},
-    [S_H_DRILL] = {"PLAY  EDIT  REC  SAVE", "PLAY  EDIT  REC  SAVE", "PLAY  EDIT  REC  SAVE",
-                   "PLAY  EDIT  REC  SAVE", "PLAY  EDIT  REC  SAVE"},
+    [S_H_DRILL] = {"EDIT: aiuto   SEL: tastiera", "EDIT: help   SEL: keyboard", "EDIT: ayuda   SEL: teclado",
+                   "EDIT: Hilfe   SEL: Tastatur", "EDIT : aide   SEL : clavier"},
     [S_D_CLEAN] = {"PULITO", "CLEAN", "LIMPIO", "SAUBER", "PROPRE"},
     [S_D_FADE] = {"PULITO -AIUTO", "CLEAN -HELP", "LIMPIO -AYUDA", "SAUBER -HILFE", "PROPRE -AIDE"},
     [S_D_TURNSLOW] = {"POLLICE LENTO", "TURN SLOW", "PULGAR LENTO", "DAUMEN LANGSAM", "POUCE LENT"},
@@ -315,6 +315,12 @@ static const char *const STR[NSTR][NLANGS] = {
     [S_D_WATCH] = {"CURA IL POLLICE", "WATCH THE THUMB", "CUIDA EL PULGAR", "DAUMEN ACHTEN", "SOIGNE LE POUCE"},
     [S_D_PASS] = {"PROVA OK", "STAGE PASS", "PRUEBA OK", "PRÜFUNG OK", "ÉPREUVE OK"},
     [S_D_STEADY] = {"COSTANTE", "STEADY", "CONSTANTE", "GLEICHMÄSSIG", "RÉGULIER"},
+    [S_D_K1] = {"CHIAVE", "KEY", "TÓNICA", "GRUNDTON", "TONIQUE"},
+    [S_D_K2] = {"SCALA", "SCALE", "ESCALA", "TONLEITER", "GAMME"},
+    [S_D_K3] = {"FORMA", "SHAPE", "FORMA", "FORM", "FORME"},
+    [S_D_K4] = {"VEL", "SPEED", "VEL", "TEMPO", "VITESSE"},
+    [S_D_KB27] = {"27 TASTI", "27 KEYS", "27 TECLAS", "27 TASTEN", "27 TOUCHES"},
+    [S_D_KBEXT] = {"PIANO", "PIANO", "PIANO", "KLAVIER", "PIANO"},
 };
 #define S(k) (STR[k][th_ui])
 

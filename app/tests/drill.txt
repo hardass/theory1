@@ -185,20 +185,41 @@ tap HOME
 wait 50
 expect screen 1
 
-# --- stage: blind, the note stays expected, a miss is counted and not waited
+# --- on the FM-1's own 27 keys: one octave, placed where it fits, and the note itself is judged
 drill 0 0 0 0
-tap SAVE
-wait 30
-expect dstate 1
-expect dassist 3
+turn SELECT 1
+expect dkb 1
+expect dlen 15
+dgo
+wait 4200
+expect dstate 2
+dnote 60
+expect dpos 1
+wait 1000
+dnote 72
+expect dstate 3
+expect derr 1
+wait 800
+dnote 62
+expect dstate 2
+expect dpos 2
+tap HOME
+wait 50
+expect screen 1
+
+# --- and back to a piano of one's own: the octave is taken from the player's first note
+drill 0 0 0 0
+turn SELECT 1
+expect dkb 0
+dgo
 wait 4200
 expect dstate 2
 dnote 48
-dnote 61
-expect dmiss 1
-expect derr 1
-expect dstate 2
 expect dpos 1
+expect dstate 2
+wait 1000
+dnote 62
+expect dstate 3
 tap HOME
 wait 50
 expect screen 1

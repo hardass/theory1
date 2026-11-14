@@ -672,7 +672,7 @@ static struct {
  * the keys' own pitches); not in the quiz, where it would give the answer away */
 static int ex_sounding(int k)
 {
-    return (ui.screen == SCR_LESSON || ui.screen == SCR_SYNPAGE) && pev_sounding[53 + k];
+    return (ui.screen == SCR_LESSON || ui.screen == SCR_SYNPAGE || ui.screen == SCR_DRILL) && pev_sounding[53 + k];
 }
 static int ex_playing(void)
 {
@@ -757,9 +757,12 @@ static void ui_lights(void)
 /* =============================================================== the drill === */
 /* SCALE DRILL (docs/SPEC-v1.0.md, read with docs/REVIEW-v1.0.md): a scale chosen, the keys lit, the player's notes
  * judged one at a time, the speed climbing on a clean round. The engine is drill_engine.c; here the screen, the
- * lights and the store, which is an object of its own so that THEORY-1's settings are never rewritten. */
+ * lights and the store, which is an object of its own so that THEORY-1's settings are never rewritten.
+ * Two places to play: a piano of the player's own (EXT: the keys mirror it) or the FM-1's own 27 keys (27: one octave,
+ * the sequence placed where it fits, judged note for note). */
 static drill_ctx_t dr;
 static drill_save_t ds;
+static uint8_t drill_dirty;                  /* a record or a setting moved: the store is written on the way out */
 #define DS_MAGIC 0x314C5244u                 /* "DRL1" */
 static const uint8_t DRILL_PC[12] = {0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5};   /* the circle of fifths */
 static uint32_t drill_blit;                  /* the next frame the drill asks for (the lights blink) */
@@ -769,14 +772,14 @@ static void drill_load(void)
     uint32_t i;
     uint8_t *p = (uint8_t *)&ds;
     int ok = plat_store_load(OBJ_DRILL, &ds, sizeof ds) == (int)sizeof ds;
-    ok = ok && ds.magic == DS_MAGIC && ds.ver == 1 && ds.root_idx < 12 && ds.scale_idx < NSCALES &&
-         ds.shape < DRILL_NUM_SHAPES && ds.hand <= 1 && ds.assist < NASSIST && ds.mode <= 1 &&
+    ok = ok && ds.magic == DS_MAGIC && ds.ver == 2 && ds.root_idx < 12 && ds.scale_idx < NSCALES &&
+         ds.shape < DRILL_NUM_SHAPES && ds.hand <= 1 && ds.assist < NASSIST && ds.kb <= 1 &&
          ds.ioi_tol <= 2 && ds.bpm >= 40 && ds.bpm <= 200 && ds.sub >= 1 && ds.sub <= 4;
     if (!ok) {
         for (i = 0; i < sizeof ds; i++)
             p[i] = 0;
         ds.magic = DS_MAGIC;
-        ds.ver = 1;
+        ds.ver = 2;
         ds.bpm = 60;                         /* a first round anyone can follow */
         ds.sub = 1;
         ds.ioi_tol = 1;
@@ -787,14 +790,19 @@ static void drill_load(void)
 static void drill_store(void)
 {
     ds.magic = DS_MAGIC;
-    ds.ver = 1;
+    ds.ver = 2;
     plat_store_save(OBJ_DRILL, &ds, sizeof ds);
+    drill_dirty = 0;
 }
 
 /* the engine's copy of the settings, and the sequence */
 static void drill_setup(void)
 {
     drill_defaults(&dr);
+    if (ds.kb == DRILL_KB_27) {
+        ds.shape = 0;                        /* two octaves do not fit 27 keys (F3..G5) */
+        ui.octave = 0;                       /* the keys must sound what the sequence asks */
+    }
     dr.root_idx = ds.root_idx;
     dr.scale_idx = ds.scale_idx;
     dr.shape = ds.shape;
@@ -804,6 +812,8 @@ static void drill_setup(void)
     dr.bpm = ds.bpm;
     dr.sub = ds.sub;
     dr.ioi_tol = ds.ioi_tol;
+    dr.oct_base = ds.kb == DRILL_KB_27 ? drill_oct_base(DRILL_PC[ds.root_idx]) : 0;
+    dr.exact = (uint8_t)(ds.kb == DRILL_KB_27);
     drill_build(&dr, SCALES[ds.scale_idx].semi, SCALES[ds.scale_idx].n,
                 ds.scale_idx == SC_MELMINOR ? DRILL_MELODIC_DOWN : 0, DRILL_PC[ds.root_idx]);
 }
@@ -814,42 +824,49 @@ static int drill_cell(void)
     return ((int)ds.scale_idx * DRILL_NUM_ROOTS + (int)ds.root_idx) * DRILL_NUM_SHAPES + (int)ds.shape;
 }
 
-static void drill_play(void)
+/* the shape once, in a hurry: what the player is about to practise, heard and seen before they start */
+static void drill_preview(void)
 {
-    drill_setup();
-    drill_start(&dr, plat_ms());
-    drill_blit = plat_ms();
-    ui.redraw = 1;
-}
-
-/* the example, at the drill's own tempo and in the drill's own shape (SPEC-v1.0 §2: play_scale would use the
- * lessons' fixed pace, docs/REVIEW-v1.0.md B4) */
-static void drill_demo(void)
-{
-    uint32_t t = plat_ms() + 40u, step = drill_note_ms(&dr), dur = step > 70u ? step - 30u : 70u;
+    uint32_t t = plat_ms() + 40u, step = 200u;
     int i;
     play_stop();
     for (i = 0; i < (int)dr.n; i++) {
-        play_note(t, dr.seq[i].midi, dur, 85);
+        play_note(t, dr.seq[i].midi, step - 40u, 85);
         t += step;
     }
     ui.redraw = 1;
 }
 
-/* a note in, from a key or from the piano: judged here and nowhere else */
+/* a setting moved: the sequence again, and played at once, so the ear knows before the hand does */
+static void drill_changed(void)
+{
+    drill_setup();
+    drill_dirty = 1;
+    drill_preview();
+}
+
+static void drill_play(void)
+{
+    drill_setup();
+    play_stop();
+    drill_start(&dr, plat_ms());
+    drill_blit = plat_ms();
+    ui.redraw = 1;
+}
+
+/* a note in, from the FM-1's keys or from the piano: judged here and nowhere else */
 static void drill_heard(int note)
 {
     int r;
     if (ui.screen != SCR_DRILL || (dr.state != DRILL_RUN && dr.state != DRILL_HOLD))
         return;
     r = drill_note(&dr, note, plat_ms());
-    if (r == DRILL_ROUND_END && dr.mode == DRILL_STAGE && dr.vkind == 7) {
-        int eff = (int)drill_eff(&dr) / 2, cell = drill_cell();
+    if (r == DRILL_ROUND_END && (dr.vkind == 0 || dr.vkind == 1)) {
         uint8_t *b = &ds.best[ds.scale_idx][ds.root_idx][ds.shape];
-        if (eff > (int)*b) {                 /* only a blind round at a higher speed is a record (REVIEW B6) */
-            *b = (uint8_t)eff;
-            ds.stage[cell >> 3] |= (uint8_t)(1u << (cell & 7));
-            drill_store();
+        if (dr.bpm > *b) {                   /* the fastest round played without a miss, kept for the way out */
+            *b = dr.bpm;
+            ds.stage[drill_cell() >> 3] |= (uint8_t)(1u << (drill_cell() & 7));
+            drill_dirty = 1;
         }
     }
     if (r != DRILL_IGNORED)
@@ -882,7 +899,7 @@ static void drill_lights(void)
     } else if (dr.assist == DRILL_ANCHOR) {
         mk.root = root;
     }
-    if ((dr.state == DRILL_HOLD || (dr.mode == DRILL_STAGE && dr.last_wrong != 255)) && blink) {
+    if (dr.state == DRILL_HOLD && blink) {
         uint16_t bad = 0;
         if (dr.pos < dr.n)
             bad |= (uint16_t)PCB(dr.seq[dr.pos].pc);
@@ -908,28 +925,40 @@ static const char *drill_verdict(void)
     }
 }
 
+/* one line of the knobs' legend: "K1 CHIAVE  Do" */
+static void drill_knob_line(int32_t y, const char *k1, const char *v1, const char *k2, const char *v2)
+{
+    char t[48];
+    t1_strcpy(t, k1);
+    str_cat(t, " ");
+    str_cat(t, v1);
+    str_cat(t, "   ");
+    str_cat(t, k2);
+    str_cat(t, " ");
+    str_cat(t, v2);
+    t1_tx(8, y, t1_tw(&FONT_XS, t) <= 224 ? &FONT_XS : &FONT_T, t, C_GRAY);
+}
+
 static void draw_drill(void)
 {
-    char t[64], u[24], v[24];
+    char t[64], u[24], v[16], key[16];
     const scale_t *s = &SCALES[ds.scale_idx];
-    int cell = drill_cell(), best = (int)ds.best[ds.scale_idx][ds.root_idx][ds.shape] * 2;
-    note_name(nt_of_pc(DRILL_PC[ds.root_idx]), u);
-    ui_header("DRILL", u, C_HI);
-    t1_strcpy(t, s->name[th_ui]);
+    note_name(nt_of_pc(DRILL_PC[ds.root_idx]), key);
+    ui_header("DRILL", S(ds.kb == DRILL_KB_27 ? S_D_KB27 : S_D_KBEXT), ds.kb == DRILL_KB_27 ? COL_ROOT : C_HI);
+    t1_strcpy(t, key);
+    str_cat(t, " ");
+    str_cat(t, s->name[th_ui]);
     t1_tx(8, 30, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, C_WHITE);
     t1_strcpy(t, drill_shape());
     t1_tx(8, 56, &FONT_B, t, COL_SCALE);
-    int_str(v, dr.bpm);
-    str_cat(v, dr.sub == 1 ? "x1" : dr.sub == 2 ? "x2" : "x4");
-    text_r(232, 58, &FONT_XS, v, C_HI);
     switch (dr.state) {
     case DRILL_IDLE: case DRILL_SUMMARY:
         t1_strcpy(t, S(S_D_READY));
-        text_c(88, &FONT_M, t, C_HI);
+        text_c(84, &FONT_B, t, C_HI);
         break;
     case DRILL_COUNTIN:
         int_str(t, dr.beats);
-        text_c(88, &FONT_L, t, COL_ROOT);
+        text_c(78, &FONT_L, t, COL_ROOT);
         break;
     case DRILL_RUN: case DRILL_HOLD: case DRILL_VERDICT: {
         const drill_note_t *e = dr.pos < dr.n ? &dr.seq[dr.pos] : 0;
@@ -937,53 +966,35 @@ static void draw_drill(void)
             note_name(nt_of_pc(e->pc), u);
             t1_strcpy(t, u);
             if (e->finger) {
-                str_cat(t, "   ");
+                str_cat(t, "  ");
                 int_str(v, e->finger);
                 str_cat(t, v);
             }
             if (e->turn)
                 str_cat(t, S(S_D_TURN));
-            t1_tx(8, 84, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, e->turn ? COL_BAD : C_WHITE);
+            t1_tx(8, 78, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, e->turn ? COL_BAD : C_WHITE);
             int_str(v, dr.pos + 1);
             str_cat(v, "/");
             int_str(t, dr.n);
             str_cat(v, t);
-            text_r(232, 88, &FONT_B, v, C_GRAY);
+            text_r(232, 82, &FONT_B, v, C_GRAY);
         }
         if (dr.state == DRILL_HOLD)
-            text_c(112, &FONT_B, S(S_D_WAIT), COL_BAD);
+            text_c(110, &FONT_B, S(S_D_WAIT), COL_BAD);
         else if (dr.state == DRILL_VERDICT)
-            text_c(112, &FONT_B, drill_verdict(), dr.vkind == 0 || dr.vkind == 1 || dr.vkind == 7 ? COL_OK :
+            text_c(110, &FONT_B, drill_verdict(), dr.vkind == 0 || dr.vkind == 1 ? COL_OK :
                                                              dr.vkind == 5 ? C_HI : COL_BAD);
         else
-            text_c(112, &FONT_B, S(S_D_GO), C_HI);
-        if (dr.pos + 1 < dr.n) {             /* what comes after: the eye can go one key ahead */
-            note_name(nt_of_pc(dr.seq[dr.pos + 1].pc), u);
-            t1_strcpy(t, S(S_D_NEXT));
-            str_cat(t, " ");
-            str_cat(t, u);
-            t1_tx(8, 136, &FONT_B, t, C_GRAY);
-        }
-        t1_strcpy(t, S(S_D_ERRS));
-        str_cat(t, " ");
-        int_str(v, dr.errors);
-        str_cat(t, v);
-        str_cat(t, "  ");
-        str_cat(t, S(S_D_UNEVEN_1));
-        str_cat(t, " ");
-        int_str(v, dr.hesit + dr.rush);
-        str_cat(t, v);
-        t1_tx(8, 158, &FONT_XS, t, C_GRAY);
+            text_c(110, &FONT_B, S(S_D_GO), C_HI);
         break;
     }
     default: break;
     }
-    t1_strcpy(t, S(S_D_BEST));
-    str_cat(t, " ");
-    int_str(v, best);
-    str_cat(t, v);
-    str_cat(t, "/min");
-    t1_tx(8, 176, &FONT_XS, t, ds.stage[cell >> 3] >> (cell & 7) & 1u ? COL_OK : C_GRAY);
+    /* the four knobs, as the other screens name theirs */
+    int_str(v, ds.bpm);
+    str_cat(v, "/min");
+    drill_knob_line(140, S(S_D_K1), key, S(S_D_K2), s->name[th_ui]);
+    drill_knob_line(156, S(S_D_K3), drill_shape(), S(S_D_K4), v);
     hint(S(S_H_DRILL));
 }
 
@@ -2609,7 +2620,12 @@ static void ui_back(void)
     case SCR_LESSON: ui_go(SCR_TOPICS); break;
     case SCR_QUIZ: case SCR_QEND: ui_go(SCR_QSETUP); break;
     case SCR_SETTINGS: settings_save(); ui_go(SCR_MENU); break;
-    case SCR_DRILL: drill_store(); ui.topic_sel = (uint8_t)T_DRILL; ui_go(SCR_TOPICS); break;
+    case SCR_DRILL:
+        if (drill_dirty)
+            drill_store();                   /* the record and the settings, once, on the way out */
+        ui.topic_sel = (uint8_t)T_DRILL;
+        ui_go(SCR_TOPICS);
+        break;
     case SCR_SYNPAGE: syn.sel = syn.ch; ui_go(SCR_SYNLIST); break;
     default: ui_go(SCR_MENU); break;
     }
@@ -2746,34 +2762,34 @@ static void ui_encoder(int e, int d)
             btdev_choose(btdev_pick() + d);
         break;
     case SCR_DRILL:
-        if (e == EN_K1 || e == EN_PRESET) {
+        if (e == EN_K1 || e == EN_PRESET) {   /* the key */
             ds.root_idx = (uint8_t)t1_wrap(ds.root_idx + d, 12);
-            drill_setup();
-        } else if (e == EN_K2) {
+            drill_changed();
+        } else if (e == EN_K2) {             /* the scale */
             ds.scale_idx = (uint8_t)t1_wrap(ds.scale_idx + d, NSCALES);
-            drill_setup();
-        } else if (e == EN_K3) {
-            uint8_t was = ds.shape;
-            ds.shape = (uint8_t)t1_wrap(ds.shape + d, DRILL_NUM_SHAPES);
-            drill_setup();
-            if (ds.shape > was) {            /* a longer shape costs speed; a shorter one is not a new skill */
-                drill_dim(&dr);
+            drill_changed();
+        } else if (e == EN_K3) {             /* the shape (on the 27 keys there is only the one octave) */
+            if (ds.kb != DRILL_KB_27) {
+                uint8_t was = ds.shape;
+                ds.shape = (uint8_t)t1_wrap(ds.shape + d, DRILL_NUM_SHAPES);
+                drill_setup();
+                if (ds.shape > was)         /* a longer shape costs speed; a shorter one is not a new skill */
+                    drill_dim(&dr);
                 ds.bpm = dr.bpm;
-                ds.sub = dr.sub;
+                drill_changed();
             }
         } else if (e == EN_K4) {             /* the speed, a beat a minute at a time: the hand's own tempo */
             int b = (int)ds.bpm + (d < 0 ? -1 : 1);
             ds.bpm = (uint8_t)(b < 40 ? 40 : b > 200 ? 200 : b);
             dr.bpm = ds.bpm;
-        } else if (e == EN_ALGO) {
+            drill_dirty = 1;
+            ui.redraw = 1;
+        } else if (e == EN_ALGO) {           /* the hand whose fingering is shown */
             ds.hand = (uint8_t)!ds.hand;
-            drill_setup();
-            drill_dim(&dr);
-            ds.bpm = dr.bpm;
-            ds.sub = dr.sub;
-        } else if (e == EN_SELECT) {
-            ds.assist = (uint8_t)t1_wrap(ds.assist + d, NASSIST);
-            drill_setup();
+            drill_changed();
+        } else if (e == EN_SELECT) {         /* where the hands are: the piano, or the 27 keys */
+            ds.kb = (uint8_t)!ds.kb;
+            drill_changed();
         }
         break;
     default: break;
@@ -2809,21 +2825,14 @@ static void names_next(void)
 
 static void ui_button(int b)
 {
-    if (ui.screen == SCR_DRILL && (b == B_SAVE || b == B_REC)) {
-        if (b == B_SAVE) {                    /* SAVE: one blind round, for the record */
-            ds.mode = DRILL_STAGE;
-            ds.assist = DRILL_BLIND;
-            drill_play();
-        } else
-            drill_demo();
-        return;
-    }
     switch (b) {
     case B_HOME: ui_back(); return;
     case B_SEL: ui_enter(); return;
     case B_GLO: ui_go(SCR_SETTINGS); return;
     case B_OCTDN: case B_OCTUP: {
         int o = clamp(ui.octave + (b == B_OCTUP ? 1 : -1), -2, 2);
+        if (ui.screen == SCR_DRILL && ds.kb == DRILL_KB_27)
+            return;                          /* on the 27 keys the sequence is placed where it fits: nothing to shift */
         int i;
         if (o != ui.octave) {
             for (i = 0; i < 128; i++)          /* a key held across the change would not find its note off */
@@ -2898,10 +2907,11 @@ static void ui_button(int b)
         if (b == B_PLAY) {
             ds.mode = DRILL_PRACTICE;
             drill_play();
-        } else if (b == B_EDIT) {
+        } else if (b == B_EDIT) {            /* the help: all the lights, then none */
             ds.assist = (uint8_t)((ds.assist + 1u) % NASSIST);
             drill_setup();
-            drill_store();
+            drill_dirty = 1;
+            ui.redraw = 1;
         }
         break;
     default: break;
@@ -3186,6 +3196,10 @@ int app_expect(const char *what, int *got)
         *got = dr.assist;
     else if (!strcmp(what, "dmiss"))
         *got = dr.misses;
+    else if (!strcmp(what, "dkb"))
+        *got = ds.kb;
+    else if (!strcmp(what, "dbest"))
+        *got = ds.best[ds.scale_idx][ds.root_idx][ds.shape];
     else if (!strcmp(what, "dfing"))
         *got = dr.pos < dr.n ? dr.seq[dr.pos].finger : 0;
     else

@@ -178,21 +178,28 @@ static void check_ladder(void)
     want("the verdict names the turn", c.vkind, 6);
 }
 
-/* the beat split never makes the notes jump (REVIEW-v1.0 S2) */
-static void check_beat_split(void)
+/* one note a beat, one click a note: the number on the screen is the number of notes a minute */
+static void check_speed(void)
 {
     drill_ctx_t c;
     drill_defaults(&c);
     c.bpm = 100;
     c.sub = 1;
     want("100 a minute", drill_eff(&c), 100);
-    set_eff(&c, 108);
-    want("108 stays on the beat", (int)drill_eff(&c), 108);
-    want("108 is 108 a beat", c.bpm, 108);
-    set_eff(&c, 124);
-    want("124 is two a beat", c.sub, 2);
-    want("124 shows 62", c.bpm, 62);
-    want("and still 124 a minute", (int)drill_eff(&c), 124);
+    want("and 100 clicks", (int)(60000u / drill_note_ms(&c)), 100);
+    c.bpm = 40;
+    want("the slowest note", drill_note_ms(&c), 1500);
+    c.bpm = 200;
+    want("the fastest note", drill_note_ms(&c), 300);
+    /* the 27 keys: a one-octave shape always fits F3..G5 (53..79) */
+    {
+        int r;
+        for (r = 0; r < 12; r++) {
+            int base = 60 + ROOT_PC[r] + 12 * (int)drill_oct_base(ROOT_PC[r]);
+            if (base < 53 || base + 12 > 79)
+                fails++, checks++, printf("FAIL root %d: %d..%d is off the 27 keys\n", r, base, base + 12);
+        }
+    }
 }
 
 /* a dimension costs 30% of the speed (SPEC-v1.0 §6 scenario 5) */
@@ -237,7 +244,7 @@ int main(void)
     check_melodic();
     check_octaves();
     check_ladder();
-    check_beat_split();
+    check_speed();
     check_dim();
     check_stage();
     printf("drill: %d checks, %d failed\n", checks, fails);

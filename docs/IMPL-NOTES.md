@@ -91,3 +91,15 @@ cd repo && JIELI_TOOLCHAIN=$HOME/.jieli/toolchain AC79_SDK=$HOME/.jieli/ac79-sdk
 ## 9. 速度旋钮
 
 K4 直接改 BPM，每次 1 拍/分钟（40..200），不再走 `eff ±8` 那套。阶梯仍会在每轮结束时自动 ±8；STAGE 模式梯子不动，只有 K4 能动。
+
+## 10. 按实测反馈改的（v1.1.0）
+
+| 反馈 | 改动 |
+|---|---|
+| REC 在所有屏都是蓝牙配对，别动 | drill 屏不再抢 REC / SAVE。REC = 蓝牙设备，SAVE = 保存设置（和其他屏一致）。STAGE 轮（原来挂在 SAVE 上）删掉 |
+| 27 键弹不了跨八度 | 新增键盘模式：**SEL 切换 `PIANO` / `27 TASTI`**。`27 TASTI` 下强制 1 八度型态、自动把主音放到 F3–G5 里（`drill_oct_base()`）、`ui.octave` 锁 0、判定改为**按绝对音高**（不认"换个八度的同一个音"），OCT± 在该模式下无效。`PIANO` 下仍是相对八度（首音定八度） |
+| 换根音/调性要立刻听到 | 任何设置变化（K1 根音、K2 音阶、K3 形态、ALGO 手）→ 立刻按 200 ms/音 播一遍整条音阶（上行+下行），PLAY 打断它并进入练习 |
+| 四个 knob 没说清 | 屏幕底部两行小字常显：`CHIAVE Do   SCALA maggiore` / `FORMA 1 ottava   VEL 60/min`；最底提示行是 `EDIT: aiuto   SEL: tastiera` |
+| `60x1` 不懂 | 去掉"每拍几个音"的概念：现在 **1 音 = 1 拍 = 1 次咔哒**，显示 `60/min` 就是每分钟 60 个音。阶梯、K4、显示三者同一个数 |
+| 屏幕上别放 best | `best` 行删掉。每轮干净通过时在 RAM 里更新 `ds.best`（存 **BPM**，就是每分钟音数），**退出 drill 屏时**才写 flash（`drill_dirty`） |
+| Edit 是改什么 | EDIT 切"灯帮多少忙"：GUIDE（全亮+指法）→ FRAME（不显示音名）→ ANCHOR（只亮根音）→ BLIND（全灭） |

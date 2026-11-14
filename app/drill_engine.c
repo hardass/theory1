@@ -34,20 +34,6 @@ static uint8_t clamp_bpm(int v)
 
 uint16_t drill_eff(const drill_ctx_t *c) { return (uint16_t)c->bpm * c->sub; }
 
-/* the speed as notes a minute once, then split into a beat and the notes on it: the ladder climbs on notes a minute,
- * so that switching the beat (1, 2 or 4 notes) never jumps (docs/REVIEW-v1.0.md S2) */
-static void set_eff(drill_ctx_t *c, int eff)
-{
-    uint8_t sub;
-    if (eff < DRILL_BPM_MIN)
-        eff = DRILL_BPM_MIN;
-    if (eff > DRILL_EFF_MAX)
-        eff = DRILL_EFF_MAX;
-    sub = eff <= 120 ? 1 : eff <= 240 ? 2 : 4;
-    c->sub = sub;
-    c->bpm = clamp_bpm((eff + sub / 2) / sub);
-}
-
 uint32_t drill_beat_ms(const drill_ctx_t *c) { return 60000u / (c->bpm ? c->bpm : 60u); }
 
 uint32_t drill_note_ms(const drill_ctx_t *c)
@@ -95,7 +81,7 @@ static int push(drill_ctx_t *c, int midi, int dir)
 
 void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_t *semi_down, uint8_t root_pc)
 {
-    int octs = c->shape == 0 ? 1 : 2, i, oct, base = 60 + (int)root_pc, top;
+    int octs = c->shape == 0 ? 1 : 2, i, oct, base = 60 + (int)root_pc + 12 * (int)c->oct_base, top;
     const uint8_t *tab = c->hand ? FINGER_L[c->root_idx % DRILL_NUM_ROOTS] : FINGER_R[c->root_idx % DRILL_NUM_ROOTS];
     uint8_t topfix = c->hand ? TOP_L[c->root_idx % DRILL_NUM_ROOTS] : TOP_R[c->root_idx % DRILL_NUM_ROOTS];
     c->n = 0;
@@ -141,6 +127,9 @@ void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_
     }
 }
 
+/* the tonic's octave for the 27 keys: C4 (60) unless the shape would run off the top of the keyboard */
+int8_t drill_oct_base(uint8_t root_pc) { return (uint8_t)(60 + root_pc) > 67u ? -1 : 0; }
+
 void drill_start(drill_ctx_t *c, uint32_t now)
 {
     if (!c->n)
@@ -162,7 +151,7 @@ void drill_start(drill_ctx_t *c, uint32_t now)
 
 void drill_dim(drill_ctx_t *c)
 {
-    set_eff(c, (int)drill_eff(c) * 7 / 10);
+    c->bpm = clamp_bpm((int)c->bpm * 7 / 10);
 }
 
 void drill_next_round(drill_ctx_t *c, uint32_t now)
@@ -174,7 +163,7 @@ void drill_next_round(drill_ctx_t *c, uint32_t now)
 /* the round's verdict: which words, and (for the ladder) what the speed became */
 static void finish(drill_ctx_t *c, uint32_t now)
 {
-    int eff = drill_eff(c), uneven = c->hesit + c->rush;
+    int uneven = c->hesit + c->rush;
     /* a clean round: no wrong note, no wait, no hesitation on a turn (that is the whole point of the drill), and at
      * most 5% of the notes uneven. docs/REVIEW-v1.0.md §S3 against SPEC §6.3: one stumble on the thumb-under must stop
      * the ladder even when the round's total is small */
@@ -197,11 +186,11 @@ static void finish(drill_ctx_t *c, uint32_t now)
         } else {
             c->vkind = 0;
         }
-        set_eff(c, eff + 8);
+        c->bpm = clamp_bpm((int)c->bpm + 8);
         return;
     }
     if (c->errors >= 3 || uneven >= 4) {
-        set_eff(c, eff - 8);
+        c->bpm = clamp_bpm((int)c->bpm - 8);
         if (c->turn_slow)
             c->vkind = 2;
         else if (c->errors >= 3)
@@ -270,6 +259,8 @@ int drill_note(drill_ctx_t *c, int note, uint32_t now)
     if (c->pos > 0 && c->prev_ok != 255 && (uint8_t)note == c->prev_ok && (uint32_t)(now - c->t_ok) < 120u)
         return DRILL_IGNORED;                    /* the same key struck again: a bounced key, not a mistake */
     e = &c->seq[c->pos];
+    if (c->exact)
+        return note == (int)e->midi ? ok(c, note, now) : wrong(c, note, now);
     if (!c->oct_lock) {
         if ((uint8_t)(note % 12) != e->pc)
             return wrong(c, note, now);
