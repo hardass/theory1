@@ -951,6 +951,13 @@ static void draw_drill(void)
     t1_tx(8, 30, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, C_WHITE);
     t1_strcpy(t, drill_shape());
     t1_tx(8, 56, &FONT_B, t, COL_SCALE);
+    if (dr.n) {                              /* where the round is, always in the same corner */
+        int_str(v, dr.state == DRILL_RUN || dr.state == DRILL_HOLD || dr.state == DRILL_VERDICT ? dr.pos + 1 : 0);
+        str_cat(v, "/");
+        int_str(t, dr.n);
+        str_cat(v, t);
+        text_r(232, 58, &FONT_B, v, C_GRAY);
+    }
     switch (dr.state) {
     case DRILL_IDLE: case DRILL_SUMMARY:
         t1_strcpy(t, S(S_D_READY));
@@ -973,11 +980,6 @@ static void draw_drill(void)
             if (e->turn)
                 str_cat(t, S(S_D_TURN));
             t1_tx(8, 78, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, e->turn ? COL_BAD : C_WHITE);
-            int_str(v, dr.pos + 1);
-            str_cat(v, "/");
-            int_str(t, dr.n);
-            str_cat(v, t);
-            text_r(232, 82, &FONT_B, v, C_GRAY);
         }
         if (dr.state == DRILL_HOLD)
             text_c(110, &FONT_B, S(S_D_WAIT), COL_BAD);
@@ -990,11 +992,11 @@ static void draw_drill(void)
     }
     default: break;
     }
-    /* the four knobs, as the other screens name theirs */
+    /* the knobs the hint line does not name, with what they are set to now */
     int_str(v, ds.bpm);
-    str_cat(v, "/min");
-    drill_knob_line(140, S(S_D_K1), key, S(S_D_K2), s->name[th_ui]);
-    drill_knob_line(156, S(S_D_K3), drill_shape(), S(S_D_K4), v);
+    str_cat(v, "");
+    drill_knob_line(140, S(S_D_K1), key, S(S_D_K2), drill_shape());
+    drill_knob_line(156, S(S_D_K3), v, S(S_D_K4), S(S_D_A0 + (int)ds.assist));
     hint(S(S_H_DRILL));
 }
 
@@ -2670,6 +2672,10 @@ static void ui_enter(void)
             q_answer_choice();
         break;
     case SCR_QEND: quiz_start(); break;
+    case SCR_DRILL:                          /* SEL: the piano of your own, or the FM-1's 27 keys */
+        ds.kb = (uint8_t)!ds.kb;
+        drill_changed();
+        break;
     case SCR_SETTINGS: settings_change(1); break;
     default: break;
     }
@@ -2762,13 +2768,13 @@ static void ui_encoder(int e, int d)
             btdev_choose(btdev_pick() + d);
         break;
     case SCR_DRILL:
-        if (e == EN_K1 || e == EN_PRESET) {   /* the key */
-            ds.root_idx = (uint8_t)t1_wrap(ds.root_idx + d, 12);
-            drill_changed();
-        } else if (e == EN_K2) {             /* the scale */
+        if (e == EN_SELECT) {                /* the skill: which scale, as SELECT does in the lessons */
             ds.scale_idx = (uint8_t)t1_wrap(ds.scale_idx + d, NSCALES);
             drill_changed();
-        } else if (e == EN_K3) {             /* the shape (on the 27 keys there is only the one octave) */
+        } else if (e == EN_K1 || e == EN_PRESET) {   /* the root */
+            ds.root_idx = (uint8_t)t1_wrap(ds.root_idx + d, 12);
+            drill_changed();
+        } else if (e == EN_K2) {             /* the shape (on the 27 keys there is only the one octave) */
             if (ds.kb != DRILL_KB_27) {
                 uint8_t was = ds.shape;
                 ds.shape = (uint8_t)t1_wrap(ds.shape + d, DRILL_NUM_SHAPES);
@@ -2778,17 +2784,19 @@ static void ui_encoder(int e, int d)
                 ds.bpm = dr.bpm;
                 drill_changed();
             }
-        } else if (e == EN_K4) {             /* the speed, a beat a minute at a time: the hand's own tempo */
+        } else if (e == EN_K3) {             /* the tempo, a beat a minute at a time */
             int b = (int)ds.bpm + (d < 0 ? -1 : 1);
             ds.bpm = (uint8_t)(b < 40 ? 40 : b > 200 ? 200 : b);
             dr.bpm = ds.bpm;
             drill_dirty = 1;
             ui.redraw = 1;
+        } else if (e == EN_K4) {             /* how much the lights help */
+            ds.assist = (uint8_t)t1_wrap(ds.assist + d, NASSIST);
+            drill_setup();
+            drill_dirty = 1;
+            ui.redraw = 1;
         } else if (e == EN_ALGO) {           /* the hand whose fingering is shown */
             ds.hand = (uint8_t)!ds.hand;
-            drill_changed();
-        } else if (e == EN_SELECT) {         /* where the hands are: the piano, or the 27 keys */
-            ds.kb = (uint8_t)!ds.kb;
             drill_changed();
         }
         break;

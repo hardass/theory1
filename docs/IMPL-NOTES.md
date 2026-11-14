@@ -103,3 +103,30 @@ K4 直接改 BPM，每次 1 拍/分钟（40..200），不再走 `eff ±8` 那套
 | `60x1` 不懂 | 去掉"每拍几个音"的概念：现在 **1 音 = 1 拍 = 1 次咔哒**，显示 `60/min` 就是每分钟 60 个音。阶梯、K4、显示三者同一个数 |
 | 屏幕上别放 best | `best` 行删掉。每轮干净通过时在 RAM 里更新 `ds.best`（存 **BPM**，就是每分钟音数），**退出 drill 屏时**才写 flash（`drill_dirty`） |
 | Edit 是改什么 | EDIT 切"灯帮多少忙"：GUIDE（全亮+指法）→ FRAME（不显示音名）→ ANCHOR（只亮根音）→ BLIND（全灭） |
+
+## 11. 与上游语法对齐（v1.2.0）
+
+查了 THEORY-1 自己的约定（`texts.c` 的 `S_H_*` 提示行）：
+
+| 屏 | 提示行 |
+|---|---|
+| 主菜单 | `SELECT CHOOSE   SEL ENTER` |
+| 主题列表 | `SELECT CHOOSE   SEL ENTER   HOME MENU` |
+| 测验设置 | `SELECT TYPE   K1 LEVEL   SEL START` |
+| SYNTH | `SELECT PAGE  SEL NEXT  PLAY EXAMPLE  FX RESTART` |
+
+即：**SELECT 选"练什么"，K1 调"根音/级别"，SEL 是"开始/进入"**。DRILL 现在照这条：
+
+| 控件 | 原来 | 现在 |
+|---|---|---|
+| SELECT | 键盘模式 | **音阶（skill）**，与 LEZIONI/QUIZ 一致 |
+| K1 / PRESETS | 根音 | 根音（不变） |
+| K2 | 音阶 | **形态** |
+| K3 | 形态 | **BPM** |
+| K4 | BPM | **辅助等级**（屏上直接显示 GUIDE/FRAME/ANCHOR/BLIND） |
+| ALGO | 手 | 手（不变） |
+| SEL（按键） | — | **键盘模式 PIANO / 27 TASTI** |
+
+底部两行常显四个 knob 的当前值（`CHIAVE Do  FORMA 1 ottava` / `BPM 60  AIUTO GUIDE`），最底行是 `SELECT SCALA   SEL TASTIERA`，与上面那些屏同一句式。
+
+**速度的口径**：固件里原本没有 BPM 概念，只有 SETTINGS ▸ `Velocità esempi`（slow/medium/fast = 520/360/240 ms/音，换算 115/167/250 音每分钟）。所以 DRILL 的 `BPM` 是新增的显式数值，但单位与之一致（都是"每分钟多少个音"），且 40–200 覆盖那三档。1 音 = 1 拍 = 1 次咔哒。

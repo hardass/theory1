@@ -187,7 +187,7 @@ expect screen 1
 
 # --- on the FM-1's own 27 keys: one octave, placed where it fits, and the note itself is judged
 drill 0 0 0 0
-turn SELECT 1
+tap SEL
 expect dkb 1
 expect dlen 15
 dgo
@@ -209,7 +209,7 @@ expect screen 1
 
 # --- and back to a piano of one's own: the octave is taken from the player's first note
 drill 0 0 0 0
-turn SELECT 1
+tap SEL
 expect dkb 0
 dgo
 wait 4200
@@ -226,14 +226,14 @@ expect screen 1
 
 # --- a longer shape costs a third of the speed; a shorter one gives nothing back; K4 is the speed itself
 drill 0 0 0 0
+turn K2 1
+expect deff 42
+turn K2 -1
+expect deff 42
 turn K3 1
-expect deff 42
-turn K3 -1
-expect deff 42
-turn K4 1
 expect deff 43
 expect dbpm 43
-turn K4 30
+turn K3 30
 expect dbpm 73
 tap HOME
 wait 30
