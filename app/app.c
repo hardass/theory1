@@ -822,8 +822,13 @@ static void drill_setup(void)
     dr.sub = ds.sub;
     dr.ioi_tol = ds.ioi_tol;
     dr.exact = (uint8_t)(ds.kb == DRILL_KB_27);
-    drill_build(&dr, SCALES[ds.scale_idx].semi, SCALES[ds.scale_idx].n,
-                ds.scale_idx == SC_MELMINOR ? DRILL_MELODIC_DOWN : 0, DRILL_PC[ds.root_idx]);
+    {
+        int fam = ds.scale_idx == SC_PENTA_MAJ ? DRILL_FING_PENTA_MAJ :
+                  ds.scale_idx == SC_PENTA_MIN ? DRILL_FING_PENTA_MIN : DRILL_FING_NONE;
+        drill_build(&dr, SCALES[ds.scale_idx].semi, SCALES[ds.scale_idx].n,
+                    ds.scale_idx == SC_MELMINOR ? DRILL_MELODIC_DOWN : 0, DRILL_PC[ds.root_idx],
+                    drill_fing_table(fam, ds.root_idx, 0), drill_fing_table(fam, ds.root_idx, 1));
+    }
 }
 
 /* the record's cell: the scale, the key and the shape */

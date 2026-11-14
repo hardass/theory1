@@ -88,6 +88,14 @@ On the 27 keys there are only `RH` and `LH`: two hands on one small keyboard is 
 - **Fingering** for the seven-note scales: one octave's table per key and hand, the top note capped with the little
   finger where the plain repeat would use the thumb, and the descent mirroring the ascent so the hand turns back
   without changing position.
+- **Fingering for the pentatonic scales** (major and minor): [pianoscales.org's chart](https://www.pianoscales.org/pentatonic.html),
+  all twelve keys, both hands, six values each (the five notes and the octave). There is no single accepted fingering
+  for five-note scales - books differ -, but this is the one complete published chart for both hands that could be
+  checked, so it is the one shown, with its source named.
+- **Nothing is shown** for the scales with neither a heptatonic table nor a chart: the blues scale, the whole tone, the
+  octatonic, the chromatic, and the world scales of five notes. Four sources give four different right-hand patterns for
+  the blues scale (`1-3-1-3-1-3`, `1-2-3-4-1-2-3`, `4-1-2-1-2-3`, `1-2-1-2-2-3`), so showing one would dress a habit as
+  a standard.
 - **Turns** are derived, not hard-coded: a thumb under the fingers, or a finger over the thumb, is a turn. That is the
   single most common place a scale stalls, so a stumble there counts.
 

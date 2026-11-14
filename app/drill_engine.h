@@ -68,9 +68,14 @@ typedef struct {
                                          * 3 errors, 4 uneven, 5 steady, 6 watch the thumb, 7 stage passed */
 } drill_ctx_t;
 
+/* the fingering of a scale other than the seven-note ones: 0 where no published chart exists */
+enum { DRILL_FING_NONE, DRILL_FING_PENTA_MAJ, DRILL_FING_PENTA_MIN };
+const uint8_t *drill_fing_table(int family, int root_idx, int hand);   /* n + 1 entries (the octave's included) */
+
 /* the sequence from a scale's semitones: semi_down 0: the same notes down (every scale but the classical melodic
- * minor, whose descent is the natural minor's) */
-void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_t *semi_down, uint8_t root_pc);
+ * minor, whose descent is the natural minor's); fing_r / fing_l: the family's chart (drill_fing_table), or 0 */
+void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_t *semi_down, uint8_t root_pc,
+                 const uint8_t *fing_r, const uint8_t *fing_l);
 
 /* the classical melodic minor's descent (drill_build's semi_down when the scale is SC_MELMINOR) */
 extern const uint8_t DRILL_MELODIC_DOWN[7];

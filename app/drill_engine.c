@@ -79,11 +79,51 @@ static int push(drill_ctx_t *c, int midi, int dir)
     return 1;
 }
 
-void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_t *semi_down, uint8_t root_pc)
+
+/* Five-note scales: pianoscales.org's chart, all twelve keys and both hands (six values: the five notes and the
+ * octave). There is no single accepted fingering for five-note scales, and every book words it differently; this is
+ * the one complete published chart for both hands that I could check, so it is the one shown. Six-note scales (the
+ * blues scale, the whole tone) have no such chart: four sources give four different right-hand patterns, so nothing is
+ * shown rather than one player's habit dressed as a standard. */
+static const uint8_t PENTA_MAJ_R[DRILL_NUM_ROOTS][6] = {
+    {1, 2, 1, 2, 3, 5}, {1, 2, 3, 1, 2, 4}, {1, 2, 3, 1, 2, 4}, {1, 2, 3, 1, 2, 1},
+    {1, 2, 3, 1, 2, 3}, {1, 2, 3, 4, 5, 1}, {1, 2, 3, 1, 2, 3}, {2, 3, 1, 2, 3, 4},
+    {2, 3, 1, 2, 1, 2}, {2, 1, 2, 3, 1, 2}, {3, 1, 2, 1, 2, 3}, {1, 2, 3, 1, 2, 4},
+};
+static const uint8_t PENTA_MAJ_L[DRILL_NUM_ROOTS][6] = {
+    {3, 2, 1, 3, 2, 1}, {3, 2, 1, 2, 1, 3}, {2, 1, 3, 2, 1, 2}, {2, 1, 2, 1, 3, 2},
+    {4, 3, 2, 1, 2, 1}, {1, 5, 4, 3, 2, 1}, {3, 2, 1, 3, 2, 1}, {3, 2, 1, 4, 3, 2},
+    {3, 2, 1, 2, 1, 3}, {3, 2, 1, 2, 1, 3}, {3, 2, 1, 2, 1, 3}, {3, 2, 1, 2, 1, 3},
+};
+static const uint8_t PENTA_MIN_R[DRILL_NUM_ROOTS][6] = {
+    {1, 2, 3, 1, 2, 3}, {1, 2, 1, 2, 3, 1}, {1, 2, 3, 1, 2, 3}, {1, 2, 3, 1, 2, 3},
+    {1, 2, 3, 1, 2, 3}, {2, 1, 2, 3, 1, 2}, {2, 1, 2, 3, 1, 2}, {2, 1, 2, 3, 1, 2},
+    {2, 1, 2, 3, 4, 5}, {1, 2, 3, 1, 2, 3}, {2, 3, 4, 1, 2, 3}, {1, 2, 3, 1, 2, 3},
+};
+static const uint8_t PENTA_MIN_L[DRILL_NUM_ROOTS][6] = {
+    {1, 3, 2, 1, 2, 1}, {1, 3, 2, 1, 2, 1}, {3, 2, 1, 3, 2, 1}, {3, 2, 1, 3, 2, 1},
+    {3, 2, 1, 3, 2, 1}, {3, 2, 1, 3, 2, 1}, {3, 2, 1, 2, 1, 3}, {2, 1, 3, 2, 1, 2},
+    {2, 1, 5, 4, 3, 2}, {3, 2, 1, 3, 2, 1}, {4, 3, 2, 1, 4, 3}, {4, 3, 2, 1, 2, 1},
+};
+
+const uint8_t *drill_fing_table(int family, int root_idx, int hand)
+{
+    if (root_idx < 0 || root_idx >= DRILL_NUM_ROOTS)
+        return 0;
+    if (family == DRILL_FING_PENTA_MAJ)
+        return hand ? PENTA_MAJ_L[root_idx] : PENTA_MAJ_R[root_idx];
+    if (family == DRILL_FING_PENTA_MIN)
+        return hand ? PENTA_MIN_L[root_idx] : PENTA_MIN_R[root_idx];
+    return 0;
+}
+
+void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_t *semi_down, uint8_t root_pc,
+                 const uint8_t *fing_r, const uint8_t *fing_l)
 {
     int octs = c->shape == 0 ? 1 : 2, i, oct, top;
     int base = 60 + (int)root_pc + 12 * (int)drill_oct_base(root_pc);
     const uint8_t *tab = c->hand ? FINGER_L[c->root_idx % DRILL_NUM_ROOTS] : FINGER_R[c->root_idx % DRILL_NUM_ROOTS];
+    const uint8_t *chart = c->hand ? fing_l : fing_r;   /* a published chart for the five-note scales */
     uint8_t topfix = c->hand ? TOP_L[c->root_idx % DRILL_NUM_ROOTS] : TOP_R[c->root_idx % DRILL_NUM_ROOTS];
     c->n = 0;
     c->pos = 0;
@@ -100,25 +140,29 @@ void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_
             for (i = (int)n - 1; i >= 0; i--)
                 push(c, base + 12 * oct + (semi_down ? semi_down[i] : semi_up[i]), 0);
 
-    /* the fingering: the plain repeat up, a little finger on a top the repeat would take with the thumb, then the
-     * descent mirrors the ascent so the hand turns back without changing position. A scale of other than seven notes
-     * shows none: a wrong fingering teaches worse than no fingering (docs/REVIEW-v1.0.md I1) */
-    if (n != 7 || c->n < 2) {
+    /* the fingering: up from the table, a little finger on a top the plain repeat would take with the thumb, then the
+     * descent mirrors the ascent so the hand turns back without changing position. A five-note scale uses the chart
+     * the app found for it (six values: the five notes and the octave); a scale with neither shows none, because a
+     * wrong fingering teaches worse than no fingering (docs/REVIEW-v1.0.md I1) */
+    top = octs * (int)n;
+    if (chart) {
+        for (i = 0; i < (int)c->n; i++)
+            c->seq[i].finger = i <= top ? chart[i % (int)(n + 1)] : 0;
+        for (i = top + 1; i < (int)c->n; i++)
+            c->seq[i].finger = c->seq[2 * top - i].finger;
+    } else if (n != 7 || c->n < 2) {
         for (i = 0; i < (int)c->n; i++)
             c->seq[i].finger = 0;
     } else {
         for (i = 0; i < (int)c->n; i++)
             if (c->seq[i].dir)
                 c->seq[i].finger = tab[i % 7];
-        top = octs * (int)n;
         if (topfix)
             c->seq[top].finger = topfix;
         else if (!c->hand && c->seq[top].finger == 1)
             c->seq[top].finger = 5;              /* a thumb under the top note: the little finger caps it */
-        for (i = top + 1; i < (int)c->n; i++) {
-            int m = 2 * top - i;
-            c->seq[i].finger = m >= 0 ? c->seq[m].finger : 0;
-        }
+        for (i = top + 1; i < (int)c->n; i++)
+            c->seq[i].finger = c->seq[2 * top - i].finger;
     }
     /* both hands: the other hand's fingers at every step, and its notes (the same ones, or the mirror of the tonic
      * for contrary motion, where the left hand walks down as the right walks up) */
@@ -128,7 +172,7 @@ void drill_build(drill_ctx_t *c, const uint8_t *semi_up, uint8_t n, const uint8_
         t.root_idx = c->root_idx;
         t.shape = c->shape;
         t.hand = (uint8_t)!c->hand;
-        drill_build(&t, semi_up, n, semi_down, root_pc);
+        drill_build(&t, semi_up, n, semi_down, root_pc, fing_r, fing_l);
         for (i = 0; i < (int)c->n; i++) {
             c->finger2[i] = t.seq[i].finger;
             c->midi2[i] = (uint8_t)(c->hands == DRILL_HAND_CONTRA ? 2 * base - (int)c->seq[i].midi : c->seq[i].midi);

@@ -30,8 +30,13 @@ static void build(drill_ctx_t *c, int scale, int root, int shape, int hand)
     c->scale_idx = (uint8_t)scale;
     c->shape = (uint8_t)shape;
     c->hand = (uint8_t)hand;
-    drill_build(c, SCALES[scale].semi, SCALES[scale].n,
-                scale == SC_MELMINOR ? MEL_DOWN : 0, ROOT_PC[root]);
+    {
+        int fam = scale == SC_PENTA_MAJ ? DRILL_FING_PENTA_MAJ :
+                  scale == SC_PENTA_MIN ? DRILL_FING_PENTA_MIN : DRILL_FING_NONE;
+        drill_build(c, SCALES[scale].semi, SCALES[scale].n,
+                    scale == SC_MELMINOR ? MEL_DOWN : 0, ROOT_PC[root],
+                    drill_fing_table(fam, root, 0), drill_fing_table(fam, root, 1));
+    }
 }
 
 /* the shape's length and its two ends */
@@ -109,7 +114,7 @@ static void check_hands(void)
     int i;
     build(&c, SC_MAJOR, 0, 0, 0);
     c.hands = DRILL_HAND_BOTH;
-    drill_build(&c, SCALES[SC_MAJOR].semi, SCALES[SC_MAJOR].n, 0, 0);
+    drill_build(&c, SCALES[SC_MAJOR].semi, SCALES[SC_MAJOR].n, 0, 0, 0, 0);
     for (i = 0; i < (int)c.n; i++) {         /* C major: right 1 2 3 1 2 3 4 5 against left 5 4 3 2 1 3 2 1 */
         if (c.midi2[i] != c.seq[i].midi)
             fails++, checks++, printf("FAIL both: note %d differs\n", i);
@@ -123,7 +128,7 @@ static void check_hands(void)
     want("both hands, the seventh", c.finger2[6], 2);
 
     c.hands = DRILL_HAND_CONTRA;
-    drill_build(&c, SCALES[SC_MAJOR].semi, SCALES[SC_MAJOR].n, 0, 0);
+    drill_build(&c, SCALES[SC_MAJOR].semi, SCALES[SC_MAJOR].n, 0, 0, 0, 0);
     want("contrary: the left hand starts on the same note", c.midi2[0], c.seq[0].midi);
     want("contrary: the left hand walks down", c.midi2[1], (uint8_t)(2 * c.seq[0].midi - c.seq[1].midi));
     want("contrary: and its turns are its own", c.finger2[1], 4);
@@ -134,6 +139,36 @@ static void check_hands(void)
     want("contrary: the left hand's note is ignored", drill_note(&c, c.midi2[1], 1100), DRILL_IGNORED);
     want("contrary: and nothing moved", c.pos, 1);
     want("contrary: the right hand's note takes it", drill_note(&c, c.seq[1].midi, 2100), DRILL_OK);
+}
+
+/* the five-note scales use pianoscales.org's chart (docs/DRILL.md), and the blues shows none */
+static void check_pentatonic(void)
+{
+    drill_ctx_t c;
+    build(&c, SC_PENTA_MAJ, 0, 0, 0);         /* C major pentatonic: C D E G A C up, then down */
+    want("C penta major len", c.n, 11);
+    want("C penta major: C", c.seq[0].finger, 1);
+    want("C penta major: D", c.seq[1].finger, 2);
+    want("C penta major: E", c.seq[2].finger, 1);
+    want("C penta major: G", c.seq[3].finger, 2);
+    want("C penta major: A", c.seq[4].finger, 3);
+    want("C penta major: octave", c.seq[5].finger, 5);
+    want("C penta major: back down, mirror", c.seq[6].finger, 3);
+    build(&c, SC_PENTA_MIN, 0, 0, 0);         /* C minor pentatonic: C Eb F G Bb C */
+    want("C penta minor: C", c.seq[0].finger, 1);
+    want("C penta minor: Eb", c.seq[1].finger, 2);
+    want("C penta minor: F", c.seq[2].finger, 3);
+    want("C penta minor: G", c.seq[3].finger, 1);
+    want("C penta minor: Bb", c.seq[4].finger, 2);
+    want("C penta minor: octave", c.seq[5].finger, 3);
+    build(&c, SC_PENTA_MIN, 0, 0, 1);         /* the left hand's own row: 1 3 2 1 2 1 */
+    want("left hand penta: C", c.seq[0].finger, 1);
+    want("left hand penta: Eb", c.seq[1].finger, 3);
+    want("left hand penta: F", c.seq[2].finger, 2);
+    build(&c, SC_BLUES, 0, 0, 0);
+    want("the blues scale shows no fingering", c.seq[0].finger + c.seq[1].finger, 0);
+    build(&c, SC_CHROMATIC, 0, 0, 0);
+    want("nor the chromatic", c.seq[0].finger, 0);
 }
 
 /* the classical melodic minor descends as the natural minor (SPEC-v1.0 §4.1) */
@@ -285,6 +320,7 @@ int main(void)
         for (sh = 0; sh < DRILL_NUM_SHAPES; sh++)
             check_shape(s, sh);
     check_fingers();
+    check_pentatonic();
     check_hands();
     check_melodic();
     check_octaves();

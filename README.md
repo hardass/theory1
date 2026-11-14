@@ -1,264 +1,127 @@
-<p align="center"><img src="docs/img/banner.png" alt="THEORY-1: music theory on the M-VAVE FM-1"></p>
+<p align="center"><img src="docs/img/banner.png" alt="SCALE DRILL, for the M-VAVE FM-1"></p>
 
-<p align="center"><i><a href="README.it.md">Versione italiana</a></i></p>
+# SCALE DRILL for the M-VAVE FM-1
 
-<p align="center"><a href="https://ko-fi.com/wave00066"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi"></a></p>
+> **This is a fork.** It is [wave00066/THEORY-1](https://github.com/wave00066/theory1) with **one addition: SCALE
+> DRILL**, a scale practice machine in the tenth row of LESSONS. Nothing else was changed. The fork also moves the
+> `base/` submodule to the commit that accepts the UC25HQ80 flash of the newer units
+> ([upstream PR #2](https://github.com/wave00066/theory1/pull/2)), without which nothing is saved on those.
+>
+> **Everything else in the firmware** - the theory lessons, the quiz, the lab, the SYNTH section, the five languages -
+> is upstream's work, unchanged. If you want those, install the original firmware from
+> [wave00066/THEORY-1](https://github.com/wave00066/theory1) and read its README; this page only describes the drill.
 
-> **This is a fork.** It is [wave00066/THEORY-1](https://github.com/wave00066/theory1) plus one addition: **SCALE
-> DRILL**, a scale practice machine in the tenth row of LESSONS. The lessons, the quiz, the lab, the SYNTH section and
-> the five languages are the upstream firmware, untouched; the drill lives in `app/drill_engine.{h,c}` with its screens
-> in `app/app.c`, and [`docs/DRILL.md`](docs/DRILL.md) is its design. The fork also moves the `base/` submodule to the
-> commit that accepts the UC25HQ80 flash of the newer units ([upstream PR #2](https://github.com/wave00066/theory1/pull/2)),
-> without which nothing is saved on those.
+<p align="center"><img src="docs/img/drill-1.png" alt="the shape playing itself, with the note and the finger"> <img src="docs/img/drill-2.png" alt="a wrong note: the round waits, the key blinks red"> <img src="docs/img/drill-3.png" alt="on the FM-1's own 27 keys"> <img src="docs/img/drill-4.png" alt="both hands"></p>
 
-THEORY-1 is a teaching firmware for the M-VAVE FM-1. It teaches music theory, and how a synthesizer works, to students
-and beginners through
-the synth's keys, lights and screen, in **English, Italian, Spanish, German and French**. Notes can be shown as
-**Do (C)** (solfège with the letter beside it), solfège only, letters only, or the German way (C D E … H, Fis, Es).
+## What it is
 
-<p align="center"><img src="docs/img/features.png" alt="Lessons, quiz and lab"></p>
+Pick a scale, a key, a shape and a tempo, and the FM-1 becomes a coach: the keys light up, you play on the FM-1's own
+keys or on a piano over USB, TRS or Bluetooth, and every note is judged as it comes. The mechanisms are the ones the
+paid practice software has proven - a wait mode, an automatic tempo ladder, a light guide that fades - rather than
+anything invented here.
 
-- **LESSONS**: the basics, **reading notes on the staff** in up to 7 clefs, intervals, 9 scales, 21 modes, 13 chord types, the chords built on every degree
-  (triads and sevenths, with roman numerals and harmonic function), the circle of fifths with all 15 keys and 13
-  **scales of the world**.
-  Everything works from any root and is spelled correctly (F major has Bb, not A#).
-  - **21 modes**: the 7 diatonic modes, the 7 modes of the melodic minor (Dorian b2, Lydian augmented, Lydian
-    dominant, Mixolydian b6, Locrian #2, the altered scale) and the 7 of the harmonic minor (Locrian #6, Ionian #5,
-    Dorian #4, Phrygian dominant, Lydian #2, super-Locrian bb7). Each shows the scale it comes from ("C altered = Db
-    melodic minor from C") and its typical note.
-  - **Scales of the world**: octatonic, Verdi's enigmatic, double harmonic (Hijaz Kar, Bhairav), Hungarian minor,
-    the Indian thaats Purvi, Marwa and Todi, the Japanese in sen, yo, hirajoshi, kumoi, iwato and Ryukyu; and a page
-    on the notes between the keys (maqam quarter tones, shrutis, gamelan).
-  - In the **LAB** you can pick any of them, and the **QUIZ** asks the new modes and scales at level 3.
-- **QUIZ**: 11 kinds of question, 10 questions each, 3 levels. You answer **by playing the keys** (notes on the
-  staff, scales, modes, chords, intervals, note names, degrees), **by ear** (single notes, intervals, chords) or by
-  choosing (keys). Every answer gets feedback,
-  with hints, a score and saved best scores.
-- **LAB**: play anything and THEORY-1 names the note, the interval or the chord, with its inversion. Pick a scale
-  to see each note's degree, with the notes outside the scale in red.
-- **SYNTH**: how a synthesizer works, in 18 chapters: sound, oscillators, filters, envelopes, the LFO, FM, additive
-  and wavetable synthesis, voices and effects, then a bass, a pad, a lead, a stab and drums built step by step. The
-  keys play a real teaching synth and K1 to K4 move its knobs, while the screen draws what they do.
-
-The FM-1's keys light up with the lesson's notes: the root bright, the other notes of the scale, mode or chord
-softer. When PLAY plays the example, each key lights brightly as its note sounds, so you see the scale go up and down.
-A keyboard at the bottom of the screen shows the same in colour (orange the root, green the right answers). An outside MIDI keyboard works too, over USB, the
-TRS jack or **Bluetooth** (a digital piano with Bluetooth MIDI, say).
-
-## Reading the staff
-
-<p align="center"><img src="docs/img/clefs.png" alt="Middle C in the treble, bass, soprano, mezzo-soprano, alto, tenor and baritone clefs"></p>
-
-The **Staff** lesson shows one note at a time on a real staff, with its clef, up to **two ledger lines** above and
-below. Turning SELECT moves the note up and down: its name and octave (Sol4 / G4), its place ("2nd line", "1st
-ledger line below") and its key on the FM-1 are shown, and **you hear it**. K1 changes the clef, K2 adds a sharp or a
-flat. In **SETTINGS → Clefs** you choose which clefs to study: **treble only**, **treble and bass**, or **all
-seven** (the Italian *setticlavio*: treble, bass, soprano, mezzo-soprano, alto, tenor, baritone).
-
-Two quizzes go with it:
-
-- **Staff reading**: a note appears on the staff; play it on the keys, then hear it. Level 1 inside the staff,
-  level 2 with the ledger lines, level 3 with sharps and flats.
-- **Ear: notes**: THEORY-1 plays the reference C, then **one note**; find it on the keys. Level 1 the white keys,
-  level 2 all twelve, level 3 two notes in a row.
-
-## Learning synthesis
-
-<p align="center"><img src="docs/img/synth.png" alt="The SYNTH section: chapters, sound, oscillator, filter, ADSR, LFO, FM, a bass built step by step"></p>
-
-In **SYNTH** the FM-1 becomes a teaching synthesizer. Its keys play a synth with two oscillators (sine, triangle, saw,
-square, pulse, noise), a filter (low-, band- and high-pass, with resonance), an ADSR envelope for the volume and one for
-the filter, a pitch envelope, an LFO, two-operator FM, additive and wavetable sources, mono with glide or six voices,
-drive and chorus. The 18 chapters follow the path of a synthesis course:
-
-| Part | Chapters |
-|---|---|
-| The basics | 1 Sound · 2 The synthesizer · 3 The oscillator · 4 The filter |
-| Envelopes and modulation | 5 The ADSR envelope · 6 The filter envelope · 7 The pitch envelope · 8 The LFO |
-| Synthesis techniques | 9 FM synthesis · 10 Additive and wavetable |
-| Voices and effects | 11 Mono, poly and glide · 12 Effects |
-| Let's make sounds together | 13 A bass · 14 A pad · 15 A lead · 16 A stab · 17 Drums |
-| Your synth | 18 Free synth: every knob, on nine pages |
-
-Each chapter has three kinds of page:
-
-- **read**: a short explanation with a picture: the wave and its harmonics, the block diagram, the filter's curve over
-  a saw's harmonics, the ADSR, the LFO, the FM operators and their sidebands, the additive bars, the wavetable.
-- **try**: K1 to K4 move four knobs, and the picture follows them while you play.
-- **step**: a goal on one knob ("turn K2 until the cutoff reaches 25%"). A mark shows where to go, and when you get
-  there the knob turns green: *Done! SEL: next*.
-
-In the chapters of *Let's make sounds together* every step adds one block to the sound, starting from a plain saw, as a
-sound designer would. PLAY plays an example that fits the chapter, and FX brings back the chapter's starting sound.
-
-## A question, step by step
-
-<p align="center"><img src="docs/img/quiz-flow.png" alt="A quiz question: asked, a wrong note, the right notes, done"></p>
-
-You answer in any octave; a chord can be played all at once or one note at a time. A wrong note is named on the
-screen and lit red; after 3 mistakes the right keys light up on their own.
-
-## Five languages
-
-<p align="center"><img src="docs/img/languages.png" alt="The same lesson in Italian, English, Spanish, German and French"></p>
-
-In **SETTINGS** (or GLO from any screen):
-
-- **Language**: Italiano, English, Español, Deutsch, Français. All the text changes, lessons included, with each
-  language's own terms (tierce, Große Terz, quinta justa) and steps (T/S, G/H in German, T/dT in French).
-- **Note names**:
-  - `Do (C)`: solfège with the letters beside it (the default). In the note boxes the letter sits under the name.
-  - `Do Re Mi`: solfège only (Ré in French).
-  - `C D E`: letters only.
-  - `C D E ... H`: the German way, H for B and B for Bb, Fis and Es for the accidentals.
-
-In the lessons and the lab, **EDIT** steps through the naming systems without opening the settings. Chord symbols
-(Cm7, G7, Bm7b5) are always in letters, as on pop and jazz charts.
-
-## The drill (SCALE DRILL)
-
-<p align="center"><img src="docs/img/drill-1.png" alt="the drill: the shape playing itself, the note and its finger"> <img src="docs/img/drill-2.png" alt="a wrong note: the round waits, the key blinks red"> <img src="docs/img/drill-3.png" alt="on the FM-1's own 27 keys"> <img src="docs/img/drill-4.png" alt="both hands"></p>
-
-The tenth row of **LESSONS** is not a lesson but a practice machine. Pick a scale, a key, a shape and a tempo, and the
-FM-1 becomes a coach: the keys light up, you play on the FM-1's own keys or on a piano over USB, TRS or Bluetooth, and
-every note is judged as it comes.
-
-**A first round, from cold:**
+## How to play
 
 1. **LESSONS** -> scroll to the tenth row, **DRILL** -> **SEL**.
-2. The shape plays itself once, in a hurry, naming each note and the finger to use it with (`Re 2` = D, second finger;
-   `POLL.` in red = a thumb-under or a cross-over is coming). The two legend lines say what each knob is set to.
-3. **Turn SELECT** for another scale, **K1** for another key - each turn plays the shape again, so the ear knows first.
-4. **Press keys before you start**: any key of the scale names its note, its finger and which note of the shape it is.
-   That is how the fingering is learnt; nothing is judged yet.
+2. The shape plays itself once, in a hurry (200 ms a note), naming each note and the finger to use it with: `B 2` is B
+   with the second finger, and a red `TURN` is a thumb-under or a cross-over you are about to meet.
+3. **Turn SELECT** for another scale, **K1** for another key - every turn plays the shape again, so the ear knows first.
+4. **Press keys before you start.** Any key of the scale names its note, its finger and which note of the shape it is
+   (`3/15`). Nothing is judged yet: this is how the fingering is learnt, and it is the point of the whole screen.
 5. **PLAY** counts four beats in and starts. The next key is bright, the rest of the scale half-lit, the root in its own
-   colour. A wrong note blinks red and the round waits there until you play the right one. **PLAY** again stops the round
-   and puts the screen back where it started.
-6. A clean round gains **8 BPM** and fades the help one level; three wrong notes give a level back and lose 8. The
-   speed is on **K3**, one beat a minute at a time; **K4** changes the help at any moment, even mid-round.
+   colour. A wrong note blinks red and the round waits there until you play the right one. **PLAY** again stops the
+   round and puts the screen back where it started.
+6. A clean round gains **8 BPM** and fades the help one level. Three wrong notes, or four uneven ones, give a level back
+   and lose 8. A stumble on a turn keeps the tempo where it is and says so (`WATCH THE THUMB`).
+7. Leave with **HOME**: the fastest clean round is kept per scale, key and shape.
 
 | Control | What it does |
 |---|---|
-| **SELECT** | the scale (the skill), the 22 scales of the lessons |
+| **SELECT** | the scale (the skill): the 22 scales of the lessons |
 | **K1** / PRESETS | the key, round the circle of fifths |
 | **K2** | the shape: one octave, two octaves, or two octaves up only |
-| **K3** | the tempo in BPM - one note a beat, one click a note |
-| **K4** | the help: GUIDE (name and finger), FRAME (finger only), ANCHOR (roots only), BLIND (nothing) |
+| **K3** | the tempo in BPM - one note a beat, one click a note, 40 to 200 |
+| **K4** | the help: GUIDE (note and finger), FRAME (finger only), ANCHOR (roots only), BLIND (nothing) |
 | **ALGORITHM** | whose hand: `RH`, `LH`, and on a piano `BOTH` and `CONTR.` (contrary motion) |
 | **ENV** | where your hands are: `PIANO` (your own keyboard) or `27 TASTI` (the FM-1's own keys) |
 | **PLAY** | play and stop: counts in and starts, or stops the round where it is |
 
-**On the 27 keys** the drill gives one octave, placed between two roots you can see (A major climbs A3 to A4), and it
-asks for the note itself; a longer shape switches to `PIANO`. **Both hands** and **contrary motion** are piano modes:
-one MIDI channel cannot tell which hand played, so those two show the fingering and the two keys and judge only the
-right hand - the honest limit is written down in [`docs/DRILL.md`](docs/DRILL.md).
+The four knobs' settings are on the screen, two columns: `K1: KEY A` `K2: SHAPE 1 octave`, `K3: BPM 60` `K4: HELP GUIDE`.
 
-All 22 scales of the lessons are here, from the major to the thirteen scales of the world; the classical melodic minor
-comes down as the natural minor. The best tempo is kept per scale, key and shape in a store object of its own, so the
-quiz records are never touched.
+## Three things worth knowing
 
-## More screens
+- **The 27 keys** get one octave, placed between two roots you can see (A major climbs A3 to A4, never off the right
+  end), and the note itself is asked for. Asking for a longer shape switches to `PIANO`.
+- **Both hands and contrary motion** are piano modes. One MIDI channel cannot say which hand played, so those two show
+  the fingering and the two keys and judge only the right hand - the limit is written down in
+  [`docs/DRILL.md`](docs/DRILL.md) rather than hidden.
+- **Fingering** is shown for the seven-note scales (per key, per hand) and for the two pentatonic scales (from
+  pianoscales.org's chart, all twelve keys, both hands). Five- and six-note scales with no published chart - the blues,
+  the whole tone, the octatonic, the chromatic - show none: a wrong fingering teaches worse than no fingering.
 
-<p align="center"><img src="docs/img/gallery.png" alt="Basics, intervals, modes, chords, keys, ear training, key-signature quiz, settings"></p>
-
-## Controls
-
-| Control | What it does |
-|---|---|
-| **SELECT** (encoder) | moves through the items: page, scale, mode, chord, answer (in SYNTH: the page) |
-| **SEL** | enters, confirms, answers, goes to the next question |
-| **HOME** | goes back one level |
-| **PLAY** | plays the example (in the quiz: the reference note, or the sound again) |
-| **K1** or **PRESETS** | the root (in the Staff lesson: the clef). In the quiz menu: the level |
-| **K2 / K3** | in Harmony: the degree / triads or sevenths. In the Staff lesson, K2: sharp, flat, natural |
-| **K1 to K4** | in SYNTH: the four knobs of the page |
-| **ALGORITHM** | in the lessons: the next topic |
-| **ARP** | in Harmony: plays the chords of every degree |
-| **EDIT** | in the quiz: a hint (the right keys light up). In the lessons: the note-name system |
-| **FX** | in the quiz: skips the question. In SYNTH: the chapter's starting sound again |
-| **GLO** | settings |
-| **REC** | looks for a Bluetooth MIDI keyboard or piano and connects to it (ALGORITHM picks, REC connects) |
-| **OCT− / OCT+** | move the keys' sound an octave |
-
-The buttons that do something on the current screen glow softly.
-
-## Quiz scoring
-
-A right answer at the first try is worth 10 points. Each wrong note costs 2 and each hint 3, but a complete played
-answer is always worth at least 2. A multiple-choice question is worth 10 if right and 0 if wrong. At the end you
-get stars and your best score. Answers with double sharps or flats never come up; E#, B#, Fb and Cb only at level 3.
+All 22 scales of the lessons are here, from the major to the thirteen scales of the world, and the classical melodic
+minor comes down as the natural minor.
 
 ## Install
 
-1. Get `theory1-X.Y.fwsc` from this repository's [*Releases*](https://github.com/wave00066/theory1/releases), or
-   `theory1.fwsc` from the latest run of the *Build and attest firmware* workflow in **Actions** (artifact `packages`).
+1. Get `theory1-X.Y.fwsc` from this repository's [Releases](https://github.com/hardass/theory1/releases).
 2. Connect the FM-1 to a computer with a USB **data** cable, directly, without a hub.
 3. From a terminal, in a copy of this repository (`git clone --recursive`):
    ```sh
    pip install mido python-rtmidi
    python3 base/tools/fm1_install.py theory1-X.Y.fwsc
    ```
-   The [FM-1 Firmware Hub](https://thefirmwarehub.com/)'s web installer only installs the firmwares in its own
-   catalogue; THEORY-1 can be installed from there once it is listed.
 4. Don't unplug the cable while it writes. The FM-1 restarts by itself when it is done.
 
 **Back to the official firmware:** download `FM-1.fwsc` (V15) from M-VAVE's download page and install it with
-M-UPGRADE, the Firmware Hub or `fm1_install.py`. If THEORY-1 ever fails to start
-twice, the FM-1 comes up in fm1-base's safe mode, from which any firmware can be installed again. THEORY-1 writes
-only its own settings (one 4 KB sector) and never touches the bootloader. This is unofficial firmware, not yet tested
-on every unit: you install it at your own risk.
+M-UPGRADE, the Firmware Hub or `fm1_install.py`. If the firmware ever fails to start twice, the FM-1 comes up in
+fm1-base's safe mode, from which any firmware can be installed again. This is unofficial firmware, not tested on every
+unit: you install it at your own risk.
 
 ## Build
 
-The firmware is built in the cloud by GitHub Actions, where the chip's compiler (JieLi) and its SDK are fetched:
-every push to `main` builds `theory1.fwsc` as an artifact, and a tag `vX.Y` makes a signed release with
-`theory1-X.Y.fwsc`.
-
-On a computer, with no FM-1 and no compiler:
+The JieLi toolchain and the AC79 SDK are needed for a package, and both are x86-64, so a Linux machine builds it
+without CI:
 
 ```sh
-git clone --recursive https://github.com/wave00066/theory1
-sh tests/run_tests.sh          # the theory, every quiz, 13200 generated questions, every text in 5 languages
-python3 base/tools/build.py app --host
-app/build/host/theory1_host app/tests/screens.txt OUT   # the screens as PNGs
-python3 docs/make_graphics.py                            # this README's pictures
+sh base/tools/get_toolchain.sh                             # ~/.jieli/toolchain
+sh base/bsp/tools/get_sdk.sh                               # ~/.jieli/ac79-sdk
+cd ~/.jieli/ac79-sdk && git sparse-checkout add /apps/common/config/    # get_sdk.sh's set is short of these
+cd <this repository>
+JIELI_TOOLCHAIN=$HOME/.jieli/toolchain AC79_SDK=$HOME/.jieli/ac79-sdk ./build.sh --release 1.8.0
+```
+
+Checks, with no FM-1 and no compiler:
+
+```sh
+sh tests/run_tests.sh                                   # the theory, the drill, every quiz, every text in five languages
+python3 base/tools/build.py app --host                  # the simulator
+app/build/host/theory1_host app/tests/drill.txt app/build/test
 ```
 
 ## Layout
 
 | File | What it holds |
 |---|---|
-| `app/theory.c` | The theory: note spelling and names (Do, Ré, C, H), the seven clefs, intervals, scales, modes, chords, degrees, keys and chord recognition, with names and explanations in 5 languages. Plain C, tested on its own. |
-| `app/texts.c` | Every other word on the screen, in 5 languages |
-| `app/synth.c` | The sound: a small 2-operator FM synth, 8 voices (piano, electric piano, organ, bells), and the SYNTH section's teaching synth (polyBLEP oscillators, state-variable filter, envelopes, LFO, FM, additive, wavetable, drive, chorus; 6 voices) |
-| `app/synthmath.h` | The teaching synth's parameters and the curves from a knob to a time, a frequency or a level |
-| `app/synthlab.c` | The SYNTH section's screens: the chapters, the pictures, the knobs and the steps |
-| `app/synth_lessons.h` | The SYNTH chapters, pages and words in 5 languages, made by `app/tools/gen_synth.py` |
-| `app/app.c` | The screens, the accented letters, the lessons, the quiz, the lab, the settings, the keys and MIDI |
-| `app/drill_engine.{h,c}` | SCALE DRILL's engine: the sequence and its fingering, the judging (pitch, the octave the player sits in, the gaps between notes), the ladder and a round's verdict. Plain C, tested on its own. `docs/DRILL.md` is its design |
-| `app/staff_glyphs.h` | The clefs, the notehead, the sharp and the flat, from the [Bravura](https://github.com/steinbergmedia/bravura) music font (SIL OFL 1.1), made by `app/tools/make_glyphs.py` |
-| `app/tests/` | `theory_test.c`, `drill_test.c` (the drill's sequence, fingerings, judging and ladder), `basic.txt` (every quiz, the lab, the settings), `questions.txt` (13200 generated questions checked), `texts_fit.txt` (every page in every language, every clef, fits the screen), `synth.txt` (every SYNTH page in every language, every step's goal), `drill.txt` (the drill: a stumble at a turn, the ladder, a blind round), `screens.txt`, `flow.txt`, `clefs.txt`; `gen_tests.py` writes the long ones |
-| `docs/make_graphics.py` | The README's pictures, made from the simulator's screens |
-| `base/` | [fm1-base](https://github.com/charlesvestal/fm1-base) (a submodule) with [felucca-bsp](https://github.com/hugelton/felucca-bsp) |
-
-The FM-1's fonts are ASCII only: an accented letter (è, ñ, ü, é, ç) is its plain letter with the accent drawn above
-(or the cedilla below), and the German ß is written "ss".
+| `app/drill_engine.{h,c}` | the drill's engine: the sequence and its fingering, the judging, the tempo ladder, a round's verdict. Plain C, tested on its own |
+| `app/app.c` | the drill's screen, its lights, its store object, and the rest of upstream's screens |
+| `app/texts.c` | every word on the screen, in five languages |
+| `app/tests/drill_test.c`, `app/tests/drill.txt` | the engine's checks and the drill in the host simulator |
+| `docs/DRILL.md` | the drill's design: controls, judgement, ladder, tests, and where it departs from its original specification |
+| `base/` | [fm1-base](https://github.com/charlesvestal/fm1-base) with [felucca-bsp](https://github.com/hugelton/felucca-bsp), as submodules |
 
 ## Licence and credits
 
-THEORY-1's own code (`app/`, `docs/`, `tests/`) is under the **Mozilla Public License 2.0** ([`LICENSE`](LICENSE)).
-A firmware package (`.fwsc`) also contains:
+THEORY-1's code (which most of this is) is under the **Mozilla Public License 2.0** ([`LICENSE`](LICENSE)); the drill
+is under the same. A firmware package (`.fwsc`) also contains:
 
 | Part | By | Licence |
 |---|---|---|
+| [THEORY-1](https://github.com/wave00066/theory1) | wave00066 and contributors | MPL-2.0 |
 | [fm1-base](https://github.com/charlesvestal/fm1-base) (`base/`) | Charles Vestal and contributors | MPL-2.0; a few files in `base/ble/` are `MPL-2.0 AND Apache-2.0` |
 | [felucca-bsp](https://github.com/hugelton/felucca-bsp) (`base/bsp/`) | Leo Kuroshita (Hügelton Instruments) and contributors | MPL-2.0 (see `base/bsp/NOTICE`) |
 | Barlow Semi Condensed, the screen's font | The Barlow Project Authors | SIL OFL 1.1 ([`LICENSES/OFL-1.1-Barlow.txt`](LICENSES/OFL-1.1-Barlow.txt)) |
 | The clefs, notehead, sharp and flat (`app/staff_glyphs.h`), from Bravura | Steinberg Media Technologies GmbH | SIL OFL 1.1 ([`LICENSES/OFL-1.1-Bravura.txt`](LICENSES/OFL-1.1-Bravura.txt)) |
-| JieLi AC79 SDK files (`uboot.boot`, `cfg_tool.bin`, `eq_cfg_hw.bin`) and Bluetooth libraries (binary), added at build time | Zhuhai Jieli Technology Co., Ltd. | Apache-2.0 ([`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt)) |
+| JieLi AC79 SDK files and Bluetooth libraries, added at build time | Zhuhai Jieli Technology Co., Ltd. | Apache-2.0 ([`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt)) |
 
-None of the JieLi files is in this repository: the build fetches them from the SDK. The full details are in
-fm1-base's [`LICENSING.md`](https://github.com/charlesvestal/fm1-base/blob/main/LICENSING.md) and
-[`CREDITS.md`](https://github.com/charlesvestal/fm1-base/blob/main/CREDITS.md).
-
-THEORY-1 is not affiliated with or endorsed by M-VAVE or JieLi. M-VAVE and FM-1 are trademarks of their owners.
+None of the JieLi files is in this repository: the build fetches them from the SDK.
