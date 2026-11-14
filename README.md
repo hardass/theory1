@@ -4,6 +4,13 @@
 
 <p align="center"><a href="https://ko-fi.com/wave00066"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support me on Ko-fi"></a></p>
 
+> **This is a fork.** It is [wave00066/THEORY-1](https://github.com/wave00066/theory1) plus one addition: **SCALE
+> DRILL**, a scale practice machine in the tenth row of LESSONS. The lessons, the quiz, the lab, the SYNTH section and
+> the five languages are the upstream firmware, untouched; the drill lives in `app/drill_engine.{h,c}` with its screens
+> in `app/app.c`, and [`docs/DRILL.md`](docs/DRILL.md) is its design. The fork also moves the `base/` submodule to the
+> commit that accepts the UC25HQ80 flash of the newer units ([upstream PR #2](https://github.com/wave00066/theory1/pull/2)),
+> without which nothing is saved on those.
+
 THEORY-1 is a teaching firmware for the M-VAVE FM-1. It teaches music theory, and how a synthesizer works, to students
 and beginners through
 the synth's keys, lights and screen, in **English, Italian, Spanish, German and French**. Notes can be shown as
@@ -110,27 +117,45 @@ In the lessons and the lab, **EDIT** steps through the naming systems without op
 
 ## The drill (SCALE DRILL)
 
-The tenth row of **LESSONS** is not a lesson but a practice machine: pick a scale, a key, a shape and a tempo, and the
-FM-1 becomes a coach. The keys light up, you play on the FM-1's own keys or on a piano over USB, TRS or Bluetooth, and
-every note is judged as it comes. The controls are the ones the rest of the firmware already uses: **SELECT** the
-scale, **K1** the key, **K2** the shape, **K3** the tempo (BPM, one note a beat) and **K4** how much the lights help
-(GUIDE, FRAME, ANCHOR, BLIND); **ENV** switches between a piano of your own and the 27 keys, **ALGORITHM** between the
-right and the left hand's fingering, **PLAY** starts a round.
+<p align="center"><img src="docs/img/drill-1.png" alt="the drill: the shape playing itself, the note and its finger"> <img src="docs/img/drill-2.png" alt="a wrong note: the round waits, the key blinks red"> <img src="docs/img/drill-3.png" alt="on the FM-1's own 27 keys"> <img src="docs/img/drill-4.png" alt="both hands"></p>
 
-- **The next key is bright**, the rest of the scale half-lit, the root in its own colour. A wrong note blinks red, the
-  round stops there and the answer stays lit until you play it (the wait mode of the paid practice apps).
-- **Four levels of help** fade by themselves on a clean round, and the tempo gains 8 notes a minute; three wrong notes
-  give one level back and lose 8.
-- **Fingering** is shown for the seven-note scales, with the thumb-under and cross-over points marked: the one thing
-  that stalls a scale is a wide turn, so a stumble there does not earn the faster tempo even when every note was right.
-- **On the 27 keys** the drill gives one octave, placed where it fits between two roots you can see; a longer shape
-  switches to a piano of your own. All 22 scales of the lessons are here, and the classical melodic minor comes down as
-  the natural minor.
-- Every setting change plays the shape once, so the ear knows what the hand is about to do. The best tempo is kept per
-  scale, key and shape in an object of its own (the quiz records are never touched).
+The tenth row of **LESSONS** is not a lesson but a practice machine. Pick a scale, a key, a shape and a tempo, and the
+FM-1 becomes a coach: the keys light up, you play on the FM-1's own keys or on a piano over USB, TRS or Bluetooth, and
+every note is judged as it comes.
 
-`docs/DRILL.md` has the whole story: the judgement, the ladder, the tests, and where the implementation departs from
-the specification it was built from.
+**A first round, from cold:**
+
+1. **LESSONS** -> scroll to the tenth row, **DRILL** -> **SEL**.
+2. The shape plays itself once, in a hurry, naming each note and the finger to use it with (`Re 2` = D, second finger;
+   `POLL.` in red = a thumb-under or a cross-over is coming). The two legend lines say what each knob is set to.
+3. **Turn SELECT** for another scale, **K1** for another key - each turn plays the shape again, so the ear knows first.
+4. **Press keys before you start**: any key of the scale names its note, its finger and which note of the shape it is.
+   That is how the fingering is learnt; nothing is judged yet.
+5. **PLAY** counts four beats in and starts. The next key is bright, the rest of the scale half-lit, the root in its own
+   colour. A wrong note blinks red and the round waits there until you play the right one. **PLAY** again stops the round
+   and puts the screen back where it started.
+6. A clean round gains **8 BPM** and fades the help one level; three wrong notes give a level back and lose 8. The
+   speed is on **K3**, one beat a minute at a time; **K4** changes the help at any moment, even mid-round.
+
+| Control | What it does |
+|---|---|
+| **SELECT** | the scale (the skill), the 22 scales of the lessons |
+| **K1** / PRESETS | the key, round the circle of fifths |
+| **K2** | the shape: one octave, two octaves, or two octaves up only |
+| **K3** | the tempo in BPM - one note a beat, one click a note |
+| **K4** | the help: GUIDE (name and finger), FRAME (finger only), ANCHOR (roots only), BLIND (nothing) |
+| **ALGORITHM** | whose hand: `RH`, `LH`, and on a piano `BOTH` and `CONTR.` (contrary motion) |
+| **ENV** | where your hands are: `PIANO` (your own keyboard) or `27 TASTI` (the FM-1's own keys) |
+| **PLAY** | play and stop: counts in and starts, or stops the round where it is |
+
+**On the 27 keys** the drill gives one octave, placed between two roots you can see (A major climbs A3 to A4), and it
+asks for the note itself; a longer shape switches to `PIANO`. **Both hands** and **contrary motion** are piano modes:
+one MIDI channel cannot tell which hand played, so those two show the fingering and the two keys and judge only the
+right hand - the honest limit is written down in [`docs/DRILL.md`](docs/DRILL.md).
+
+All 22 scales of the lessons are here, from the major to the thirteen scales of the world; the classical melodic minor
+comes down as the natural minor. The best tempo is kept per scale, key and shape in a store object of its own, so the
+quiz records are never touched.
 
 ## More screens
 
