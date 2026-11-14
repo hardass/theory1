@@ -766,6 +766,9 @@ static uint8_t drill_dirty;                  /* a record or a setting moved: the
 #define DS_MAGIC 0x314C5244u                 /* "DRL1" */
 static const uint8_t DRILL_PC[12] = {0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5};   /* the circle of fifths */
 static uint32_t drill_blit;                  /* the next frame the drill asks for (the lights blink) */
+static uint32_t drill_prev_at;               /* when the example started, and whether it is still going */
+static uint8_t drill_prev_on;
+#define DRILL_PREVIEW_MS 200u                /* the example's pace: fast enough to hear a whole shape */
 
 static void drill_load(void)
 {
@@ -826,14 +829,32 @@ static int drill_cell(void)
 /* the shape once, in a hurry: what the player is about to practise, heard and seen before they start */
 static void drill_preview(void)
 {
-    uint32_t t = plat_ms() + 40u, step = 200u;
+    uint32_t t = plat_ms() + 40u;
     int i;
     play_stop();
     for (i = 0; i < (int)dr.n; i++) {
-        play_note(t, dr.seq[i].midi, step - 40u, 85);
-        t += step;
+        play_note(t, dr.seq[i].midi, DRILL_PREVIEW_MS - 40u, 85);
+        t += DRILL_PREVIEW_MS;
     }
+    drill_prev_at = plat_ms() + 40u;
+    drill_prev_on = (uint8_t)(dr.n != 0);
     ui.redraw = 1;
+}
+
+/* the example's note, now: -1 when it is over (or never started) */
+static int drill_preview_pos(void)
+{
+    int32_t dt;
+    if (!drill_prev_on)
+        return -1;
+    dt = (int32_t)(plat_ms() - drill_prev_at);   /* signed: the first frames are before the example starts */
+    if (dt < 0)
+        return 0;
+    if (dt >= (int32_t)((uint32_t)dr.n * DRILL_PREVIEW_MS)) {
+        drill_prev_on = 0;
+        return -1;
+    }
+    return (int)(dt / (int32_t)DRILL_PREVIEW_MS);
 }
 
 /* a setting moved: the sequence again, and played at once, so the ear knows before the hand does */
@@ -848,9 +869,28 @@ static void drill_play(void)
 {
     drill_setup();
     play_stop();
+    drill_prev_on = 0;
     drill_start(&dr, plat_ms());
     drill_blit = plat_ms();
     ui.redraw = 1;
+}
+
+/* PLAY, pressed again: the round stops where it is and the screen goes back to the state it started in */
+static void drill_stop(void)
+{
+    play_stop();
+    drill_setup();
+    drill_prev_on = 0;
+    drill_blit = plat_ms();
+    ui.redraw = 1;
+}
+
+static void drill_toggle(void)
+{
+    if (dr.state == DRILL_IDLE || dr.state == DRILL_SUMMARY)
+        drill_play();
+    else
+        drill_stop();
 }
 
 /* a note in, from the FM-1's keys or from the piano: judged here and nowhere else */
@@ -939,6 +979,7 @@ static void drill_knob_cell(int32_t x, int32_t y, const char *k, const char *lab
 static void draw_drill(void)
 {
     char t[64], u[24], v[16], key[16];
+    int pk;
     const scale_t *s = &SCALES[ds.scale_idx];
     note_name(nt_of_pc(DRILL_PC[ds.root_idx]), key);
     t1_strcpy(v, S(ds.kb == DRILL_KB_27 ? S_D_KB27 : S_D_KBEXT));
@@ -950,18 +991,32 @@ static void draw_drill(void)
     t1_tx(8, 30, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, C_WHITE);
     t1_strcpy(t, drill_shape());
     t1_tx(8, 56, &FONT_B, t, COL_SCALE);
+    pk = drill_preview_pos();                /* the example's note, -1 when it is not playing */
     if (dr.n) {                              /* where the round is, always in the same corner */
-        int_str(v, dr.state == DRILL_RUN || dr.state == DRILL_HOLD || dr.state == DRILL_VERDICT ? dr.pos + 1 : 0);
+        int_str(v, pk >= 0 ? pk + 1 :
+                   dr.state == DRILL_RUN || dr.state == DRILL_HOLD || dr.state == DRILL_VERDICT ? dr.pos + 1 : 0);
         str_cat(v, "/");
         int_str(t, dr.n);
         str_cat(v, t);
         text_r(232, 58, &FONT_B, v, C_GRAY);
     }
     switch (dr.state) {
-    case DRILL_IDLE: case DRILL_SUMMARY:
-        t1_strcpy(t, S(S_D_READY));
-        text_c(84, &FONT_B, t, C_HI);
+    case DRILL_IDLE: case DRILL_SUMMARY: {
+        if (pk >= 0 && pk < (int)dr.n) {     /* the example, note by note, with the finger to use */
+            const drill_note_t *e = &dr.seq[pk];
+            note_name(nt_of_pc(e->pc), u);
+            t1_strcpy(t, u);
+            if (e->finger) {
+                str_cat(t, "  ");
+                int_str(v, e->finger);
+                str_cat(t, v);
+            }
+            if (e->turn)
+                str_cat(t, S(S_D_TURN));
+            t1_tx(8, 78, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, e->turn ? COL_BAD : C_HI);
+        }
         break;
+    }
     case DRILL_COUNTIN:
         int_str(t, dr.beats);
         text_c(78, &FONT_L, t, COL_ROOT);
@@ -2659,6 +2714,7 @@ static void ui_enter(void)
             ui.topic = T_BASICS;
             drill_setup();
             ui_go(SCR_DRILL);
+            drill_preview();             /* the shape once, so the ear knows what the screen is set to */
             break;
         }
         ui_go(SCR_LESSON);
@@ -2916,7 +2972,7 @@ static void ui_button(int b)
     case SCR_DRILL:
         if (b == B_PLAY) {
             ds.mode = DRILL_PRACTICE;
-            drill_play();
+            drill_toggle();
         } else if (b == B_EDIT) {            /* the help: all the lights, then none */
             ds.assist = (uint8_t)((ds.assist + 1u) % NASSIST);
             drill_setup();
@@ -3373,6 +3429,7 @@ int app_host_cmd(const char *cmd, const char *a, const char *b, const char *c, c
         drill_setup();
         ui.topic = T_BASICS;
         ui_go(SCR_DRILL);
+        drill_preview();
         return 1;
     }
     if (!strcmp(cmd, "dgo")) {

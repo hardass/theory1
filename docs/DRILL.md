@@ -23,12 +23,13 @@ the root, K2..K4 the rest**. The hint line, the two legend columns and the heade
 | **K4** | how much the lights help: GUIDE, FRAME, ANCHOR, BLIND |
 | **ALGORITHM** | whose fingering is shown: right hand (R) or left (L) |
 | **ENV** | where the hands are: `PIANO` (your own keyboard) or `27 TASTI` (the FM-1's own keys) |
-| **PLAY** | start a round (four beats of count-in, then the first note) |
+| **PLAY** | start a round (four beats of count-in, then the first note); pressed again, it stops the round and puts the screen back where it started |
 | **EDIT** | the same as K4, for muscle memory |
 | **HOME** | back to the topics; the record and the settings are written here |
 
-Any change of scale, key, shape or hand plays the shape once, at 200 ms a note, so the ear knows before the hand does.
-PLAY interrupts it and starts the round.
+Any change of scale, key, shape or hand plays the shape once, at 200 ms a note, so the ear knows before the hand does;
+the screen names each note as it sounds, with the finger to use and the turn marked. PLAY interrupts it and starts the
+round.
 
 ### The screen
 
@@ -80,6 +81,7 @@ and the top of it will leave the lights behind - which is the honest limit of a 
 | What happens | What the drill does |
 |---|---|
 | right note | green flash, the next key lights, the note advances |
+| PLAY pressed during a round | the round stops, the screen goes back to its starting state, and the next press counts in again |
 | wrong note | the key flashes red, the round stops there (wait mode) and the answer stays lit until you play it |
 | the same key again within 120 ms | ignored: a bouncing key, not a mistake |
 | the right pitch class in another octave, `PIANO` | accepted: the octave is taken from your first note and held |

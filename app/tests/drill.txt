@@ -224,7 +224,31 @@ tap HOME
 wait 50
 expect screen 1
 
-# --- a longer shape costs a third of the speed; a shorter one gives nothing back; K4 is the speed itself
+# --- PLAY is play and stop: the same button keeps a round going, or puts it back where it started
+drill 0 0 0 0
+tap PLAY
+wait 30
+expect dstate 1
+tap PLAY
+wait 30
+expect dstate 0
+expect dpos 0
+tap PLAY
+wait 30
+expect dstate 1
+wait 4200
+expect dstate 2
+dnote 60
+expect dpos 1
+tap PLAY
+wait 30
+expect dstate 0
+expect dpos 0
+tap HOME
+wait 50
+expect screen 1
+
+# --- a longer shape costs a third of the speed; a shorter one gives nothing back; K3 is the speed itself
 drill 0 0 0 0
 turn K2 1
 expect deff 42
