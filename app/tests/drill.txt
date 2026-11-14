@@ -224,6 +224,35 @@ tap HOME
 wait 50
 expect screen 1
 
+# --- before PLAY the keys are a map: a key of the scale names its note and its finger, and nothing starts
+drill 0 0 0 0
+wait 3200
+dnote 64
+expect dstate 0
+expect dtry 2
+dnote 61
+expect dtry -1
+tap HOME
+wait 50
+expect screen 1
+
+# --- the help can be turned during a round without stopping it
+drill 0 0 0 0
+tap PLAY
+wait 4200
+expect dstate 2
+dnote 60
+expect dpos 1
+turn K4 1
+expect dassist 1
+expect dstate 2
+expect dpos 1
+turn K4 -1
+expect dassist 0
+tap PLAY
+wait 30
+expect dstate 0
+
 # --- PLAY is play and stop: the same button keeps a round going, or puts it back where it started
 drill 0 0 0 0
 tap PLAY

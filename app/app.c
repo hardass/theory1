@@ -768,6 +768,7 @@ static const uint8_t DRILL_PC[12] = {0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5};   /*
 static uint32_t drill_blit;                  /* the next frame the drill asks for (the lights blink) */
 static uint32_t drill_prev_at;               /* when the example started, and whether it is still going */
 static uint8_t drill_prev_on;
+static int8_t drill_try = -1;                /* a key pressed before PLAY: which note of the shape it is */
 #define DRILL_PREVIEW_MS 200u                /* the example's pace: fast enough to hear a whole shape */
 
 static void drill_load(void)
@@ -862,6 +863,7 @@ static void drill_changed(void)
 {
     drill_setup();
     drill_dirty = 1;
+    drill_try = -1;
     drill_preview();
 }
 
@@ -870,6 +872,7 @@ static void drill_play(void)
     drill_setup();
     play_stop();
     drill_prev_on = 0;
+    drill_try = -1;
     drill_start(&dr, plat_ms());
     drill_blit = plat_ms();
     ui.redraw = 1;
@@ -881,6 +884,7 @@ static void drill_stop(void)
     play_stop();
     drill_setup();
     drill_prev_on = 0;
+    drill_try = -1;
     drill_blit = plat_ms();
     ui.redraw = 1;
 }
@@ -894,10 +898,30 @@ static void drill_toggle(void)
 }
 
 /* a note in, from the FM-1's keys or from the piano: judged here and nowhere else */
+/* before PLAY the keys are a map, not a test: a key pressed names the note and the finger that plays it */
+static void drill_try_key(int note)
+{
+    int k, pc = note % 12;
+    drill_try = -1;
+    for (k = 0; k < (int)dr.n; k++)
+        if (dr.seq[k].pc == pc) {            /* the first time the shape has it (the ascent) */
+            drill_try = (int8_t)k;
+            break;
+        }
+    drill_prev_on = 0;                       /* a key of your own takes the screen from the example */
+    ui.redraw = 1;
+}
+
 static void drill_heard(int note)
 {
     int r;
-    if (ui.screen != SCR_DRILL || (dr.state != DRILL_RUN && dr.state != DRILL_HOLD))
+    if (ui.screen != SCR_DRILL)
+        return;
+    if (dr.state == DRILL_IDLE || dr.state == DRILL_SUMMARY) {
+        drill_try_key(note);
+        return;
+    }
+    if (dr.state != DRILL_RUN && dr.state != DRILL_HOLD)
         return;
     r = drill_note(&dr, note, plat_ms());
     if (r == DRILL_ROUND_END && (dr.vkind == 0 || dr.vkind == 1)) {
@@ -983,7 +1007,7 @@ static void draw_drill(void)
     const scale_t *s = &SCALES[ds.scale_idx];
     note_name(nt_of_pc(DRILL_PC[ds.root_idx]), key);
     t1_strcpy(v, S(ds.kb == DRILL_KB_27 ? S_D_KB27 : S_D_KBEXT));
-    str_cat(v, ds.hand ? " L" : " R");
+    str_cat(v, ds.hand ? " LH" : " RH");      /* left or right hand: whose fingering is shown */
     ui_header("DRILL", v, ds.kb == DRILL_KB_27 ? COL_ROOT : C_HI);
     t1_strcpy(t, key);
     str_cat(t, " ");
@@ -992,9 +1016,11 @@ static void draw_drill(void)
     t1_strcpy(t, drill_shape());
     t1_tx(8, 56, &FONT_B, t, COL_SCALE);
     pk = drill_preview_pos();                /* the example's note, -1 when it is not playing */
-    if (dr.n) {                              /* where the round is, always in the same corner */
-        int_str(v, pk >= 0 ? pk + 1 :
-                   dr.state == DRILL_RUN || dr.state == DRILL_HOLD || dr.state == DRILL_VERDICT ? dr.pos + 1 : 0);
+    if (dr.n) {                              /* where we are, in the same corner: the example, the round, or a key tried */
+        int at = pk >= 0 ? pk + 1 :
+                 dr.state == DRILL_RUN || dr.state == DRILL_HOLD || dr.state == DRILL_VERDICT ? dr.pos + 1 :
+                 drill_try >= 0 ? drill_try + 1 : 0;
+        int_str(v, at);
         str_cat(v, "/");
         int_str(t, dr.n);
         str_cat(v, t);
@@ -1002,8 +1028,9 @@ static void draw_drill(void)
     }
     switch (dr.state) {
     case DRILL_IDLE: case DRILL_SUMMARY: {
-        if (pk >= 0 && pk < (int)dr.n) {     /* the example, note by note, with the finger to use */
-            const drill_note_t *e = &dr.seq[pk];
+        int k = pk >= 0 ? pk : drill_try;     /* the example, or the key the player just tried */
+        if (k >= 0 && k < (int)dr.n) {
+            const drill_note_t *e = &dr.seq[k];
             note_name(nt_of_pc(e->pc), u);
             t1_strcpy(t, u);
             if (e->finger) {
@@ -1013,7 +1040,8 @@ static void draw_drill(void)
             }
             if (e->turn)
                 str_cat(t, S(S_D_TURN));
-            t1_tx(8, 78, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, e->turn ? COL_BAD : C_HI);
+            t1_tx(8, 78, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t,
+                  e->turn ? COL_BAD : pk >= 0 ? C_HI : COL_OK);
         }
         break;
     }
@@ -1023,11 +1051,15 @@ static void draw_drill(void)
         break;
     case DRILL_RUN: case DRILL_HOLD: case DRILL_VERDICT: {
         const drill_note_t *e = dr.pos < dr.n ? &dr.seq[dr.pos] : 0;
-        if (e) {
-            note_name(nt_of_pc(e->pc), u);
-            t1_strcpy(t, u);
+        if (e && dr.assist <= DRILL_FRAME) { /* GUIDE names it, FRAME leaves only the finger, and the rest none */
+            if (dr.assist == DRILL_GUIDE) {
+                note_name(nt_of_pc(e->pc), u);
+                t1_strcpy(t, u);
+            } else
+                t1_strcpy(t, "");
             if (e->finger) {
-                str_cat(t, "  ");
+                if (t[0])
+                    str_cat(t, "  ");
                 int_str(v, e->finger);
                 str_cat(t, v);
             }
@@ -2842,9 +2874,9 @@ static void ui_encoder(int e, int d)
             dr.bpm = ds.bpm;
             drill_dirty = 1;
             ui.redraw = 1;
-        } else if (e == EN_K4) {             /* how much the lights help */
+        } else if (e == EN_K4) {             /* how much the lights help: a round already running keeps going */
             ds.assist = (uint8_t)t1_wrap(ds.assist + d, NASSIST);
-            drill_setup();
+            dr.assist = ds.assist;
             drill_dirty = 1;
             ui.redraw = 1;
         } else if (e == EN_ALGO) {           /* the hand whose fingering is shown */
@@ -2973,11 +3005,6 @@ static void ui_button(int b)
         if (b == B_PLAY) {
             ds.mode = DRILL_PRACTICE;
             drill_toggle();
-        } else if (b == B_EDIT) {            /* the help: all the lights, then none */
-            ds.assist = (uint8_t)((ds.assist + 1u) % NASSIST);
-            drill_setup();
-            drill_dirty = 1;
-            ui.redraw = 1;
         }
         break;
     default: break;
@@ -3112,7 +3139,7 @@ static void draw_all(void)
     case SCR_DRILL:
         draw_drill();
         drill_lights();
-        btn_live |= 1u << B_PLAY | 1u << B_EDIT | 1u << B_REC | 1u << B_SAVE;
+        btn_live |= 1u << B_PLAY | 1u << B_ENV;   /* EDIT does nothing here: K4 is the help */
         break;
     default: break;
     }
@@ -3262,6 +3289,8 @@ int app_expect(const char *what, int *got)
         *got = dr.assist;
     else if (!strcmp(what, "dmiss"))
         *got = dr.misses;
+    else if (!strcmp(what, "dtry"))
+        *got = drill_try;
     else if (!strcmp(what, "dkb"))
         *got = ds.kb;
     else if (!strcmp(what, "dbest"))

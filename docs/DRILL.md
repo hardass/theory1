@@ -20,11 +20,11 @@ the root, K2..K4 the rest**. The hint line, the two legend columns and the heade
 | **K1** / PRESETS | the key, round the circle of fifths |
 | **K2** | the shape: 1 octave up and down, 2 octaves up and down, 2 octaves up |
 | **K3** | the tempo, one BPM at a time (40..200) |
-| **K4** | how much the lights help: GUIDE, FRAME, ANCHOR, BLIND |
-| **ALGORITHM** | whose fingering is shown: right hand (R) or left (L) |
+| **K4** | how much the lights help: GUIDE, FRAME, ANCHOR, BLIND - and it can be turned in the middle of a round without stopping it |
+| **ALGORITHM** | whose fingering is shown: `RH` or `LH`, right or left hand (in the header) |
 | **ENV** | where the hands are: `PIANO` (your own keyboard) or `27 TASTI` (the FM-1's own keys) |
 | **PLAY** | start a round (four beats of count-in, then the first note); pressed again, it stops the round and puts the screen back where it started |
-| **EDIT** | the same as K4, for muscle memory |
+| **before PLAY** | the keys are a map, not a test: play any key of the scale and the screen names the note, its finger and whether it is a turn, and the corner says which note of the shape it is |
 | **HOME** | back to the topics; the record and the settings are written here |
 
 Any change of scale, key, shape or hand plays the shape once, at 200 ms a note, so the ear knows before the hand does;
@@ -98,9 +98,17 @@ A round is **clean** when it has no wrong note, no wait, no hesitation on a turn
 - three wrong notes, or four uneven ones: **-8 BPM**, and one level of help comes back
 - one stumble on a turn: the tempo stays where it is, and the verdict says so (`WATCH THE THUMB`)
 
-The four levels of help: **GUIDE** lights the next key bright with the scale half-lit, the root in its own colour, and
-shows the note's name and finger; **FRAME** the same lights without the name; **ANCHOR** only the roots, as map
-references; **BLIND** nothing, except the correct key flashing red when you miss.
+The four levels of help:
+
+| Level | Lights | Screen, during a round |
+|---|---|---|
+| **GUIDE** | the next key bright, the scale half-lit, the root in its own colour | the note's name and its finger |
+| **FRAME** | the same | only the finger: the name is gone, the lights still show where |
+| **ANCHOR** | the roots only, as map references | nothing |
+| **BLIND** | nothing | nothing; the correct key flashes red when you miss |
+
+The screen hides more as the lights do, which is the point: the sequence should end up in the hands, not on the
+display. Before PLAY the screen always names what you press - that is how the shape is learnt in the first place.
 
 ## Records
 
