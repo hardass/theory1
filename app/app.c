@@ -677,6 +677,9 @@ static int ex_sounding(int k)
 static int ex_playing(void)
 {
     int k;
+    if (ui.screen == SCR_DRILL)                  /* the drill's example lights the key it sounds and nothing else: the
+                                                  * root and the scale must stay still under it, or they flick */
+        return 0;
     for (k = 0; k < NKEYS; k++)
         if (ex_sounding(k))
             return 1;

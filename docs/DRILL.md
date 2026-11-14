@@ -28,8 +28,9 @@ the root, K2..K4 the rest**. The hint line, the two legend columns and the heade
 | **HOME** | back to the topics; the record and the settings are written here |
 
 Any change of scale, key, shape or hand plays the shape once, at 200 ms a note, so the ear knows before the hand does;
-the screen names each note as it sounds, with the finger to use and the turn marked. PLAY interrupts it and starts the
-round.
+the screen names each note as it sounds, with the finger to use and the turn marked. While it plays, only the key that
+sounds is lit brighter: the root and the scale stay exactly as they are, because a root that dims and brightens with
+every note is unreadable (it was, until 1.7.0). PLAY interrupts it and starts the round.
 
 ### The screen
 
