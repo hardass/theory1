@@ -2761,10 +2761,10 @@ static void ui_encoder(int e, int d)
                 ds.bpm = dr.bpm;
                 ds.sub = dr.sub;
             }
-        } else if (e == EN_K4) {
-            set_eff(&dr, (int)drill_eff(&dr) + (d < 0 ? -8 : 8));
-            ds.bpm = dr.bpm;
-            ds.sub = dr.sub;
+        } else if (e == EN_K4) {             /* the speed, a beat a minute at a time: the hand's own tempo */
+            int b = (int)ds.bpm + (d < 0 ? -1 : 1);
+            ds.bpm = (uint8_t)(b < 40 ? 40 : b > 200 ? 200 : b);
+            dr.bpm = ds.bpm;
         } else if (e == EN_ALGO) {
             ds.hand = (uint8_t)!ds.hand;
             drill_setup();

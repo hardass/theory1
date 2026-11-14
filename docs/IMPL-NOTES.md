@@ -81,3 +81,13 @@ cd repo && JIELI_TOOLCHAIN=$HOME/.jieli/toolchain AC79_SDK=$HOME/.jieli/ac79-sdk
 2. 屏幕版式只做过 240 px 宽度检查与 4 张截图目检（`/tmp/opencode/shots`）；没有做 5 语言逐页目检。
 3. 西/法/德新增 20 条文案由我写，未经母语者过目。
 4. 指法表 F#/Db 顶音、左手 F# 的 1 指落 C# 这两处待教师核对。
+
+## 8. 你的 PR #2（UC25HQ80 flash）已并入
+
+`base/` 的 pin 从 `5649be9` 提到 `b7043f9`（fm1-base PR #35 的 merge commit），`base/bsp` 随之 `cd76d43 → 773b0b9`。这就是 `wave00066/theory1#2`（作者 hardass）的全部内容：`device/fm1_flash_ok.h` 的 `FM1B_FLASH_JEDEC_OK(id)` 现在接受 `0x856014`（Puya P25Q80）与 `0xB36014`（UC25HQ80）两种 flash。
+
+没有这一条，`flash_ok` 在 UC25HQ80 机器上恒假，整个 store 只在 RAM 里：SETTINGS 的 SAVE 报 ERROR、语言和 quiz 成绩掉电即失、蓝牙配对丢失，**并且本项目的 `OBJ_DRILL`（成绩、设置）同样不会落盘**。
+
+## 9. 速度旋钮
+
+K4 直接改 BPM，每次 1 拍/分钟（40..200），不再走 `eff ±8` 那套。阶梯仍会在每轮结束时自动 ±8；STAGE 模式梯子不动，只有 K4 能动。

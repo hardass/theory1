@@ -203,14 +203,17 @@ tap HOME
 wait 50
 expect screen 1
 
-# --- a longer shape costs a third of the speed; a shorter one gives nothing back
+# --- a longer shape costs a third of the speed; a shorter one gives nothing back; K4 is the speed itself
 drill 0 0 0 0
 turn K3 1
 expect deff 42
 turn K3 -1
 expect deff 42
 turn K4 1
-expect deff 50
+expect deff 43
+expect dbpm 43
+turn K4 30
+expect dbpm 73
 tap HOME
 wait 30
 expect screen 1
