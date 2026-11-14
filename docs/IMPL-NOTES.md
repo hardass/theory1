@@ -59,10 +59,25 @@ SPEC §5 的四级表按字面写不出来（REVIEW B2）：宿主 `ui_lights()`
 
 新增 host 命令：`drill ROOT SCALE SHAPE [HAND]`、`dgo`、`dnote N`、`doff N`；新增断言项：`dstate dpos dlen dbpm deff dsub derr dhes dturn dvkind dassist dmiss dfing`。
 
-## 6. 未完成 / 未验证
+## 6. 本机出包（2026-11-14 打通）
 
-1. **没有出 `.fwsc`**：本机无 JieLi PI32v2 工具链，`build.py app`（device）未跑；只有 host 模拟器验证。出包仍需 GitHub Actions（fork + token）。
-2. **没上真机**：灯的实际亮度/闪烁频率、节拍器音量、内部键盘的 27 键手感都未验证；2 八度型态在真机上要靠 OCT± 移窗。
-3. 屏幕版式只做过 240 px 宽度检查与 4 张截图目检（`/tmp/opencode/shots`）；没有做 5 语言逐页目检。
-4. 西/法/德新增 20 条文案由我写，未经母语者过目。
-5. 指法表 F#/Db 顶音、左手 F# 的 1 指落 C# 这两处待教师核对。
+nuc7 是 x86-64，JieLi 的工具链也是 x86-64，所以**不需要 CI 也能本地出 `.fwsc`**（之前判断"必须 GitHub Actions"是错的，撤回）：
+
+```sh
+sh base/tools/get_toolchain.sh                    # ~/.jieli/toolchain (136 MB)
+sh base/bsp/tools/get_sdk.sh                      # ~/.jieli/ac79-sdk (Apache-2.0, d179b44)
+# get_sdk.sh 的 sparse 集合少了 apps/common/config/，补一次否则 BLE 构建找不到 .c：
+cd ~/.jieli/ac79-sdk && git sparse-checkout add /apps/common/config/
+cd repo && JIELI_TOOLCHAIN=$HOME/.jieli/toolchain AC79_SDK=$HOME/.jieli/ac79-sdk python3 base/tools/build.py app
+```
+
+产物：`app/build/theory1.fwsc`（611 496 B，identity `FM-1_5800`）、`app/build/theory1.bin`（486 912 B），构建自检全过（`.ram_text` 调用、无 64 位乘法、无软浮点、RAM 84 468/98 304 B）。
+
+刷机：`pip` 的 python-rtmidi 在 Debian 13 上要 ALSA 头文件，直接用发行版包更省事 —— `apt install python3-mido python3-rtmidi`，然后 `python3 base/tools/fm1_install.py app/build/theory1.fwsc`（USB 数据线直连，不过 hub，写入时别拔）。
+
+## 7. 未完成 / 未验证
+
+1. **上真机未验证**：`.fwsc` 已在本机出包（见 §6），但还没刷进设备；灯的实际亮度/闪烁频率、节拍器音量、OCT± 移窗都还没在真机上验。
+2. 屏幕版式只做过 240 px 宽度检查与 4 张截图目检（`/tmp/opencode/shots`）；没有做 5 语言逐页目检。
+3. 西/法/德新增 20 条文案由我写，未经母语者过目。
+4. 指法表 F#/Db 顶音、左手 F# 的 1 指落 C# 这两处待教师核对。
