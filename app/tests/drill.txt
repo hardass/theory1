@@ -1,0 +1,216 @@
+# The drill, in the host simulator: the sequence, the lights' expectations, a stumble at the thumb-under, the ladder,
+# the octave the player sits in, and a stage round (docs/SPEC-v1.0.md §6, written by hand: the app's own commands are
+# drill ROOT SCALE SHAPE HAND / dgo / dnote N, and its own checks dstate dpos dlen dbpm deff dsub derr dhes dturn dvkind).
+wait 900
+
+# --- the way in: LESSONS, the tenth row, and the drill's own screen
+tap SEL
+wait 30
+expect screen 1
+turn SELECT 9
+wait 30
+tap SEL
+wait 30
+expect screen 10
+tap HOME
+wait 30
+expect screen 1
+tap HOME
+wait 30
+expect screen 0
+
+# --- the sequence: C major, two octaves up and down, right hand
+drill 0 0 1 0
+expect screen 10
+expect dlen 29
+expect dbpm 60
+dgo
+wait 30
+expect dstate 1
+wait 4200
+expect dstate 2
+
+# --- C major 2 octaves from C3: the first note takes the octave, the rest follow it
+wait 10
+dnote 48
+expect dstate 2
+expect dpos 1
+wait 1000
+dnote 50
+wait 1000
+dnote 52
+# the thumb-under (seq[3] is F, finger 1): 1.5 s where 1 s was due
+wait 1500
+dnote 53
+wait 1000
+dnote 55
+wait 1000
+dnote 57
+wait 1000
+dnote 59
+wait 1000
+dnote 60
+wait 1000
+dnote 62
+wait 1000
+dnote 64
+wait 1000
+dnote 65
+wait 1000
+dnote 67
+wait 1000
+dnote 69
+wait 1000
+dnote 71
+wait 1000
+dnote 72
+wait 1000
+dnote 71
+wait 1000
+dnote 69
+wait 1000
+dnote 67
+wait 1000
+dnote 65
+wait 1000
+dnote 64
+wait 1000
+dnote 62
+wait 1000
+dnote 60
+wait 1000
+dnote 59
+wait 1000
+dnote 57
+wait 1000
+dnote 55
+wait 1000
+dnote 53
+wait 1000
+dnote 52
+wait 1000
+dnote 50
+wait 1000
+dnote 48
+expect dstate 4
+expect derr 0
+expect dhes 1
+expect dturn 1
+expect dvkind 6
+expect deff 60
+
+# --- the next round starts by itself; a clean one climbs (and fades the lights one level)
+wait 1600
+expect dstate 1
+wait 4200
+expect dstate 2
+dnote 48
+wait 1000
+dnote 50
+wait 1000
+dnote 52
+wait 1000
+dnote 53
+wait 1000
+dnote 55
+wait 1000
+dnote 57
+wait 1000
+dnote 59
+wait 1000
+dnote 60
+wait 1000
+dnote 62
+wait 1000
+dnote 64
+wait 1000
+dnote 65
+wait 1000
+dnote 67
+wait 1000
+dnote 69
+wait 1000
+dnote 71
+wait 1000
+dnote 72
+wait 1000
+dnote 71
+wait 1000
+dnote 69
+wait 1000
+dnote 67
+wait 1000
+dnote 65
+wait 1000
+dnote 64
+wait 1000
+dnote 62
+wait 1000
+dnote 60
+wait 1000
+dnote 59
+wait 1000
+dnote 57
+wait 1000
+dnote 55
+wait 1000
+dnote 53
+wait 1000
+dnote 52
+wait 1000
+dnote 50
+wait 1000
+dnote 48
+expect dstate 4
+expect dvkind 1
+expect deff 68
+expect dassist 1
+
+# --- the octave the player sits in is taken once, and then held: another C is a mistake
+drill 0 0 0 0
+dgo
+wait 4200
+expect dstate 2
+dnote 48
+expect dpos 1
+wait 1000
+dnote 62
+expect dstate 3
+expect derr 1
+wait 800
+dnote 50
+expect dstate 2
+expect dpos 2
+tap HOME
+wait 50
+expect screen 1
+
+# --- stage: blind, the note stays expected, a miss is counted and not waited
+drill 0 0 0 0
+tap SAVE
+wait 30
+expect dstate 1
+expect dassist 3
+wait 4200
+expect dstate 2
+dnote 48
+dnote 61
+expect dmiss 1
+expect derr 1
+expect dstate 2
+expect dpos 1
+tap HOME
+wait 50
+expect screen 1
+
+# --- a longer shape costs a third of the speed; a shorter one gives nothing back
+drill 0 0 0 0
+turn K3 1
+expect deff 42
+turn K3 -1
+expect deff 42
+turn K4 1
+expect deff 50
+tap HOME
+wait 30
+expect screen 1

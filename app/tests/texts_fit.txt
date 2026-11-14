@@ -2123,6 +2123,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30
@@ -4916,6 +4957,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30
@@ -7709,6 +7791,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30
@@ -10502,6 +10625,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30
@@ -13295,6 +13459,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30
@@ -16088,6 +16293,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30
@@ -18881,6 +19127,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30
@@ -21674,6 +21961,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30
@@ -24467,6 +24795,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30
@@ -27260,6 +27629,47 @@ turn SELECT 1
 wait 20
 turn ALGO 1
 wait 20
+drill 0 0 0 0
+wait 30
+expect screen 10
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+tap EDIT
+wait 30
+turn K3 1
+wait 20
+turn K4 1
+wait 20
+turn K1 1
+wait 20
+turn K2 1
+wait 20
+turn ALGO 1
+wait 20
+tap REC
+wait 50
+tap PLAY
+wait 4000
+tap HOME
+wait 30
+turn SELECT 1
+wait 30
 tap HOME
 tap HOME
 wait 30

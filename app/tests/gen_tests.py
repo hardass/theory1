@@ -71,6 +71,13 @@ def texts_fit():
                             for r in range(17):
                                 L += ["turn K1 1", "turn K2 1", "wait 20", "turn K3 1", "wait 20", "turn K3 1"]
                 L += ["turn ALGO 1", "wait 20"]
+                if t == len(TOPIC_ITEMS) - 1:   # and the drill, a screen of its own: every help level, every shape
+                    L += ["drill 0 0 0 0", "wait 30", "expect screen 10"]
+                    for a in range(4):
+                        L += ["tap EDIT", "wait 30", "turn K3 1", "wait 20", "turn K4 1", "wait 20"]
+                    L += ["turn K1 1", "wait 20", "turn K2 1", "wait 20", "turn ALGO 1", "wait 20",
+                          "tap REC", "wait 50", "tap PLAY", "wait 4000", "tap HOME", "wait 30"]
+                    L += ["turn SELECT 1", "wait 30"]
             L += ["tap HOME", "tap HOME", "wait 30", "turn SELECT 1", "tap SEL", "wait 30"]
             for qt in range(NQT):
                 for lv in range(3):

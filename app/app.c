@@ -14,6 +14,8 @@
 #include "synthmath.h"
 #include "synth_lessons.h"
 #include "staff_glyphs.h"
+#include "drill_engine.h"
+#include "drill_engine.c"
 
 /* ================================================================ settings === */
 #define SET_MAGIC 0x31454854u            /* "THE1" */
@@ -177,10 +179,10 @@ static void play_interval(int b, int semis, int together)
 
 /* ================================================================ screens === */
 enum { SCR_MENU, SCR_TOPICS, SCR_LESSON, SCR_QSETUP, SCR_QUIZ, SCR_QEND, SCR_LAB, SCR_SETTINGS, SCR_SYNLIST,
-       SCR_SYNPAGE };
-enum { T_BASICS, T_STAFF, T_INTERVALS, T_SCALES, T_MODES, T_CHORDS, T_HARMONY, T_KEYS, T_WORLD, NTOPICS };
+       SCR_SYNPAGE, SCR_DRILL };
+enum { T_BASICS, T_STAFF, T_INTERVALS, T_SCALES, T_MODES, T_CHORDS, T_HARMONY, T_KEYS, T_WORLD, T_DRILL, NTOPICS };
 static const uint8_t TOPIC_ITEMS[NTOPICS] = {NBASICS, STAFF_HI - STAFF_LO + 1, NINTERVALS, NBASESCALES, NMODES, NCHORDS, 9,
-                                             NKEYSIG, NWORLD};
+                                             NKEYSIG, NWORLD, 1};
 
 /* the scales of the Harmony lesson: four scales and the five modes that are not one of them */
 #define NHSCALES 9
@@ -750,6 +752,239 @@ static void ui_lights(void)
     }
     plat_lights(ui.btn | (set_dirty ? 1u << B_SAVE : 0u), bright, btn_live, dim, 1);
     plat_lights_mid(0, mid);
+}
+
+/* =============================================================== the drill === */
+/* SCALE DRILL (docs/SPEC-v1.0.md, read with docs/REVIEW-v1.0.md): a scale chosen, the keys lit, the player's notes
+ * judged one at a time, the speed climbing on a clean round. The engine is drill_engine.c; here the screen, the
+ * lights and the store, which is an object of its own so that THEORY-1's settings are never rewritten. */
+static drill_ctx_t dr;
+static drill_save_t ds;
+#define DS_MAGIC 0x314C5244u                 /* "DRL1" */
+static const uint8_t DRILL_PC[12] = {0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5};   /* the circle of fifths */
+static uint32_t drill_blit;                  /* the next frame the drill asks for (the lights blink) */
+
+static void drill_load(void)
+{
+    uint32_t i;
+    uint8_t *p = (uint8_t *)&ds;
+    int ok = plat_store_load(OBJ_DRILL, &ds, sizeof ds) == (int)sizeof ds;
+    ok = ok && ds.magic == DS_MAGIC && ds.ver == 1 && ds.root_idx < 12 && ds.scale_idx < NSCALES &&
+         ds.shape < DRILL_NUM_SHAPES && ds.hand <= 1 && ds.assist < NASSIST && ds.mode <= 1 &&
+         ds.ioi_tol <= 2 && ds.bpm >= 40 && ds.bpm <= 200 && ds.sub >= 1 && ds.sub <= 4;
+    if (!ok) {
+        for (i = 0; i < sizeof ds; i++)
+            p[i] = 0;
+        ds.magic = DS_MAGIC;
+        ds.ver = 1;
+        ds.bpm = 60;                         /* a first round anyone can follow */
+        ds.sub = 1;
+        ds.ioi_tol = 1;
+    }
+    drill_defaults(&dr);
+}
+
+static void drill_store(void)
+{
+    ds.magic = DS_MAGIC;
+    ds.ver = 1;
+    plat_store_save(OBJ_DRILL, &ds, sizeof ds);
+}
+
+/* the engine's copy of the settings, and the sequence */
+static void drill_setup(void)
+{
+    drill_defaults(&dr);
+    dr.root_idx = ds.root_idx;
+    dr.scale_idx = ds.scale_idx;
+    dr.shape = ds.shape;
+    dr.hand = ds.hand;
+    dr.assist = ds.assist;
+    dr.mode = ds.mode;
+    dr.bpm = ds.bpm;
+    dr.sub = ds.sub;
+    dr.ioi_tol = ds.ioi_tol;
+    drill_build(&dr, SCALES[ds.scale_idx].semi, SCALES[ds.scale_idx].n,
+                ds.scale_idx == SC_MELMINOR ? DRILL_MELODIC_DOWN : 0, DRILL_PC[ds.root_idx]);
+}
+
+/* the record's cell: the scale, the key and the shape */
+static int drill_cell(void)
+{
+    return ((int)ds.scale_idx * DRILL_NUM_ROOTS + (int)ds.root_idx) * DRILL_NUM_SHAPES + (int)ds.shape;
+}
+
+static void drill_play(void)
+{
+    drill_setup();
+    drill_start(&dr, plat_ms());
+    drill_blit = plat_ms();
+    ui.redraw = 1;
+}
+
+/* the example, at the drill's own tempo and in the drill's own shape (SPEC-v1.0 §2: play_scale would use the
+ * lessons' fixed pace, docs/REVIEW-v1.0.md B4) */
+static void drill_demo(void)
+{
+    uint32_t t = plat_ms() + 40u, step = drill_note_ms(&dr), dur = step > 70u ? step - 30u : 70u;
+    int i;
+    play_stop();
+    for (i = 0; i < (int)dr.n; i++) {
+        play_note(t, dr.seq[i].midi, dur, 85);
+        t += step;
+    }
+    ui.redraw = 1;
+}
+
+/* a note in, from a key or from the piano: judged here and nowhere else */
+static void drill_heard(int note)
+{
+    int r;
+    if (ui.screen != SCR_DRILL || (dr.state != DRILL_RUN && dr.state != DRILL_HOLD))
+        return;
+    r = drill_note(&dr, note, plat_ms());
+    if (r == DRILL_ROUND_END && dr.mode == DRILL_STAGE && dr.vkind == 7) {
+        int eff = (int)drill_eff(&dr) / 2, cell = drill_cell();
+        uint8_t *b = &ds.best[ds.scale_idx][ds.root_idx][ds.shape];
+        if (eff > (int)*b) {                 /* only a blind round at a higher speed is a record (REVIEW B6) */
+            *b = (uint8_t)eff;
+            ds.stage[cell >> 3] |= (uint8_t)(1u << (cell & 7));
+            drill_store();
+        }
+    }
+    if (r != DRILL_IGNORED)
+        ui.redraw = 1;
+}
+
+/* the sequence's pitch classes: what the scale lights, all octaves at once (mk is by pitch class) */
+static uint16_t drill_scale_mask(void)
+{
+    const scale_t *s = &SCALES[ds.scale_idx];
+    uint16_t m = 0;
+    int i;
+    for (i = 0; i < (int)s->n; i++)
+        m |= (uint16_t)PCB((DRILL_PC[ds.root_idx] + s->semi[i]) % 12);
+    return m;
+}
+
+/* the lights: the expected key bright, the scale half, the root bright, a mistake red and blinking (the host has no
+ * blinking of its own: the masks are flipped here, docs/REVIEW-v1.0.md B2) */
+static void drill_lights(void)
+{
+    uint16_t root = (uint16_t)PCB(DRILL_PC[ds.root_idx]);
+    uint16_t scale = drill_scale_mask();
+    int blink = (int)((plat_ms() / 130u) & 1u);
+    if (dr.assist <= DRILL_FRAME) {
+        mk.scale = (uint16_t)(scale & ~root);
+        mk.root = root;
+        if ((dr.state == DRILL_RUN || dr.state == DRILL_HOLD) && dr.pos < dr.n)
+            mk.ok = (uint16_t)PCB(dr.seq[dr.pos].pc);
+    } else if (dr.assist == DRILL_ANCHOR) {
+        mk.root = root;
+    }
+    if ((dr.state == DRILL_HOLD || (dr.mode == DRILL_STAGE && dr.last_wrong != 255)) && blink) {
+        uint16_t bad = 0;
+        if (dr.pos < dr.n)
+            bad |= (uint16_t)PCB(dr.seq[dr.pos].pc);
+        if (dr.last_wrong != 255)
+            bad |= (uint16_t)PCB(dr.last_wrong % 12);
+        mk.bad = bad;                        /* the key played red, blinking: the answer stays bright above it */
+    }
+}
+
+static const char *drill_shape(void) { return S(S_D_SHAPE0 + (int)ds.shape); }
+
+static const char *drill_verdict(void)
+{
+    switch (dr.vkind) {
+    case 0: return S(S_D_CLEAN);
+    case 1: return S(S_D_FADE);
+    case 2: return S(S_D_TURNSLOW);
+    case 3: return S(S_D_ERRORS);
+    case 4: return S(S_D_UNEVEN);
+    case 6: return S(S_D_WATCH);
+    case 7: return S(S_D_PASS);
+    default: return S(S_D_STEADY);
+    }
+}
+
+static void draw_drill(void)
+{
+    char t[64], u[24], v[24];
+    const scale_t *s = &SCALES[ds.scale_idx];
+    int cell = drill_cell(), best = (int)ds.best[ds.scale_idx][ds.root_idx][ds.shape] * 2;
+    note_name(nt_of_pc(DRILL_PC[ds.root_idx]), u);
+    ui_header("DRILL", u, C_HI);
+    t1_strcpy(t, s->name[th_ui]);
+    t1_tx(8, 30, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, C_WHITE);
+    t1_strcpy(t, drill_shape());
+    t1_tx(8, 56, &FONT_B, t, COL_SCALE);
+    int_str(v, dr.bpm);
+    str_cat(v, dr.sub == 1 ? "x1" : dr.sub == 2 ? "x2" : "x4");
+    text_r(232, 58, &FONT_XS, v, C_HI);
+    switch (dr.state) {
+    case DRILL_IDLE: case DRILL_SUMMARY:
+        t1_strcpy(t, S(S_D_READY));
+        text_c(88, &FONT_M, t, C_HI);
+        break;
+    case DRILL_COUNTIN:
+        int_str(t, dr.beats);
+        text_c(88, &FONT_L, t, COL_ROOT);
+        break;
+    case DRILL_RUN: case DRILL_HOLD: case DRILL_VERDICT: {
+        const drill_note_t *e = dr.pos < dr.n ? &dr.seq[dr.pos] : 0;
+        if (e) {
+            note_name(nt_of_pc(e->pc), u);
+            t1_strcpy(t, u);
+            if (e->finger) {
+                str_cat(t, "   ");
+                int_str(v, e->finger);
+                str_cat(t, v);
+            }
+            if (e->turn)
+                str_cat(t, S(S_D_TURN));
+            t1_tx(8, 84, t1_tw(&FONT_M, t) <= 224 ? &FONT_M : &FONT_B, t, e->turn ? COL_BAD : C_WHITE);
+            int_str(v, dr.pos + 1);
+            str_cat(v, "/");
+            int_str(t, dr.n);
+            str_cat(v, t);
+            text_r(232, 88, &FONT_B, v, C_GRAY);
+        }
+        if (dr.state == DRILL_HOLD)
+            text_c(112, &FONT_B, S(S_D_WAIT), COL_BAD);
+        else if (dr.state == DRILL_VERDICT)
+            text_c(112, &FONT_B, drill_verdict(), dr.vkind == 0 || dr.vkind == 1 || dr.vkind == 7 ? COL_OK :
+                                                             dr.vkind == 5 ? C_HI : COL_BAD);
+        else
+            text_c(112, &FONT_B, S(S_D_GO), C_HI);
+        if (dr.pos + 1 < dr.n) {             /* what comes after: the eye can go one key ahead */
+            note_name(nt_of_pc(dr.seq[dr.pos + 1].pc), u);
+            t1_strcpy(t, S(S_D_NEXT));
+            str_cat(t, " ");
+            str_cat(t, u);
+            t1_tx(8, 136, &FONT_B, t, C_GRAY);
+        }
+        t1_strcpy(t, S(S_D_ERRS));
+        str_cat(t, " ");
+        int_str(v, dr.errors);
+        str_cat(t, v);
+        str_cat(t, "  ");
+        str_cat(t, S(S_D_UNEVEN_1));
+        str_cat(t, " ");
+        int_str(v, dr.hesit + dr.rush);
+        str_cat(t, v);
+        t1_tx(8, 158, &FONT_XS, t, C_GRAY);
+        break;
+    }
+    default: break;
+    }
+    t1_strcpy(t, S(S_D_BEST));
+    str_cat(t, " ");
+    int_str(v, best);
+    str_cat(t, v);
+    str_cat(t, "/min");
+    t1_tx(8, 176, &FONT_XS, t, ds.stage[cell >> 3] >> (cell & 7) & 1u ? COL_OK : C_GRAY);
+    hint(S(S_H_DRILL));
 }
 
 /* ============================================================ the staff === */
@@ -2323,6 +2558,8 @@ static void note_in(int note, int vel, int on, int outside)
             ui.hist[ui.nhist < 8 ? ui.nhist++ : 7] = (uint8_t)note;
         } else if (ui.screen == SCR_QUIZ) {
             q_note(note);
+        } else if (ui.screen == SCR_DRILL) {
+            drill_heard(note);
         }
     } else {
         if (!outside || !cfg.ext_mute)
@@ -2372,6 +2609,7 @@ static void ui_back(void)
     case SCR_LESSON: ui_go(SCR_TOPICS); break;
     case SCR_QUIZ: case SCR_QEND: ui_go(SCR_QSETUP); break;
     case SCR_SETTINGS: settings_save(); ui_go(SCR_MENU); break;
+    case SCR_DRILL: drill_store(); ui.topic_sel = (uint8_t)T_DRILL; ui_go(SCR_TOPICS); break;
     case SCR_SYNPAGE: syn.sel = syn.ch; ui_go(SCR_SYNLIST); break;
     default: ui_go(SCR_MENU); break;
     }
@@ -2399,6 +2637,12 @@ static void ui_enter(void)
         break;
     case SCR_TOPICS:
         ui.topic = ui.topic_sel;
+        if (ui.topic == T_DRILL) {            /* the drill is a screen of its own, not a lesson's list */
+            ui.topic = T_BASICS;
+            drill_setup();
+            ui_go(SCR_DRILL);
+            break;
+        }
         ui_go(SCR_LESSON);
         lesson_play();
         break;
@@ -2456,7 +2700,10 @@ static void ui_encoder(int e, int d)
         } else if (e == EN_SELECT)
             ui.item[ui.topic] = (uint8_t)t1_wrap(ui.item[ui.topic] + d, n);
         else if (e == EN_ALGO) {
-            ui.topic = (uint8_t)t1_wrap(ui.topic + d, NTOPICS);
+            int t = t1_wrap(ui.topic + d, NTOPICS);
+            if (t == T_DRILL)                /* the drill is a screen of its own, not a lesson: skipped here */
+                t = t1_wrap(t + d, NTOPICS);
+            ui.topic = (uint8_t)t;
             ui.topic_sel = ui.topic;
         } else if (e == EN_K1 || e == EN_PRESET) {
             if (ui.topic == T_KEYS)
@@ -2498,6 +2745,37 @@ static void ui_encoder(int e, int d)
         if (FM1B_BLE_CENTRAL && e == EN_ALGO && ui.looking)
             btdev_choose(btdev_pick() + d);
         break;
+    case SCR_DRILL:
+        if (e == EN_K1 || e == EN_PRESET) {
+            ds.root_idx = (uint8_t)t1_wrap(ds.root_idx + d, 12);
+            drill_setup();
+        } else if (e == EN_K2) {
+            ds.scale_idx = (uint8_t)t1_wrap(ds.scale_idx + d, NSCALES);
+            drill_setup();
+        } else if (e == EN_K3) {
+            uint8_t was = ds.shape;
+            ds.shape = (uint8_t)t1_wrap(ds.shape + d, DRILL_NUM_SHAPES);
+            drill_setup();
+            if (ds.shape > was) {            /* a longer shape costs speed; a shorter one is not a new skill */
+                drill_dim(&dr);
+                ds.bpm = dr.bpm;
+                ds.sub = dr.sub;
+            }
+        } else if (e == EN_K4) {
+            set_eff(&dr, (int)drill_eff(&dr) + (d < 0 ? -8 : 8));
+            ds.bpm = dr.bpm;
+            ds.sub = dr.sub;
+        } else if (e == EN_ALGO) {
+            ds.hand = (uint8_t)!ds.hand;
+            drill_setup();
+            drill_dim(&dr);
+            ds.bpm = dr.bpm;
+            ds.sub = dr.sub;
+        } else if (e == EN_SELECT) {
+            ds.assist = (uint8_t)t1_wrap(ds.assist + d, NASSIST);
+            drill_setup();
+        }
+        break;
     default: break;
     }
     ui.redraw = 1;
@@ -2531,6 +2809,15 @@ static void names_next(void)
 
 static void ui_button(int b)
 {
+    if (ui.screen == SCR_DRILL && (b == B_SAVE || b == B_REC)) {
+        if (b == B_SAVE) {                    /* SAVE: one blind round, for the record */
+            ds.mode = DRILL_STAGE;
+            ds.assist = DRILL_BLIND;
+            drill_play();
+        } else
+            drill_demo();
+        return;
+    }
     switch (b) {
     case B_HOME: ui_back(); return;
     case B_SEL: ui_enter(); return;
@@ -2607,6 +2894,16 @@ static void ui_button(int b)
         else if (b == B_EDIT)
             names_next();
         break;
+    case SCR_DRILL:
+        if (b == B_PLAY) {
+            ds.mode = DRILL_PRACTICE;
+            drill_play();
+        } else if (b == B_EDIT) {
+            ds.assist = (uint8_t)((ds.assist + 1u) % NASSIST);
+            drill_setup();
+            drill_store();
+        }
+        break;
     default: break;
     }
     ui.redraw = 1;
@@ -2648,6 +2945,13 @@ static void ui_input(void)
         if ((e = plat_enc((int)k)) != 0)
             ui_encoder((int)k, e);
     play_tick();
+    if (ui.screen == SCR_DRILL) {           /* the drill's clock: the count-in, the beat, the round's end */
+        drill_tick(&dr, now);
+        if (dr.click) {
+            dr.click = 0;
+            play_note(now + 1u, dr.state == DRILL_COUNTIN ? 91 : 84, 22u, 55);
+        }
+    }
     if (pev_changed) {
         pev_changed = 0;
         if (ui.screen == SCR_LESSON || ui.screen == SCR_SYNPAGE)
@@ -2685,7 +2989,9 @@ static void speak(void)
     if (ann_on() && ann_where()) {
         char t[160];
         const int where[8] = {S_TAGLINE, S_M_LESSONS, S_M_LESSONS, S_M_QUIZ, S_M_QUIZ, S_END, S_M_LAB, S_M_SETTINGS};
-        if (syn_is(ui.screen)) {
+        if (ui.screen == SCR_DRILL) {
+            t1_strcpy(t, S(S_T_DRILL));
+        } else if (syn_is(ui.screen)) {
             t1_strcpy(t, SW(SS_MENU));
             if (ui.screen == SCR_SYNPAGE) {
                 str_cat(t, ". ");
@@ -2727,6 +3033,11 @@ static void draw_all(void)
     case SCR_SETTINGS: draw_settings(); btn_live |= 1u << B_SEL | 1u << B_SAVE; break;
     case SCR_SYNLIST: draw_synlist(); btn_live |= 1u << B_SEL; break;
     case SCR_SYNPAGE: draw_synpage(); btn_live |= 1u << B_SEL | 1u << B_PLAY | 1u << B_FX; break;
+    case SCR_DRILL:
+        draw_drill();
+        drill_lights();
+        btn_live |= 1u << B_PLAY | 1u << B_EDIT | 1u << B_REC | 1u << B_SAVE;
+        break;
     default: break;
     }
     if (!no_kb)
@@ -2785,6 +3096,10 @@ void app_frame(void)
         syn.anim = now + 70u;                /* a moving picture: about 14 frames a second */
         ui.redraw = 1;
     }
+    if (ui.screen == SCR_DRILL && (int32_t)(now - drill_blit) >= 0) {
+        drill_blit = now + 70u;              /* the drill's lights blink and its counters move */
+        ui.redraw = 1;
+    }
     if (ui.redraw) {
         ui.redraw = 0;
         ui_draw();
@@ -2805,6 +3120,7 @@ void app_init(void)
         cfg.ble_off = (uint8_t)(cfg.ble_off != 0);
     }
     settings_apply();
+    drill_load();
     ui.screen = SCR_MENU;
     ui.item[T_STAFF] = (uint8_t)(2 - STAFF_LO);   /* the staff lesson starts on the second line (G4 in treble) */
 }
@@ -2846,6 +3162,32 @@ int app_expect(const char *what, int *got)
         *got = syn.ch;
     else if (!strcmp(what, "synpage"))
         *got = syn.page;
+    else if (!strcmp(what, "dstate"))
+        *got = dr.state;
+    else if (!strcmp(what, "dpos"))
+        *got = dr.pos;
+    else if (!strcmp(what, "dlen"))
+        *got = dr.n;
+    else if (!strcmp(what, "dbpm"))
+        *got = dr.bpm;
+    else if (!strcmp(what, "deff"))
+        *got = drill_eff(&dr);
+    else if (!strcmp(what, "dsub"))
+        *got = dr.sub;
+    else if (!strcmp(what, "derr"))
+        *got = dr.errors;
+    else if (!strcmp(what, "dhes"))
+        *got = dr.hesit;
+    else if (!strcmp(what, "dturn"))
+        *got = dr.turn_slow;
+    else if (!strcmp(what, "dvkind"))
+        *got = dr.vkind;
+    else if (!strcmp(what, "dassist"))
+        *got = dr.assist;
+    else if (!strcmp(what, "dmiss"))
+        *got = dr.misses;
+    else if (!strcmp(what, "dfing"))
+        *got = dr.pos < dr.n ? dr.seq[dr.pos].finger : 0;
     else
         return 0;
     return 1;
@@ -2992,6 +3334,36 @@ int app_host_cmd(const char *cmd, const char *a, const char *b, const char *c, c
         cfg.names = (uint8_t)(atoi(a) % NNAMES);
         settings_apply();
         ui.redraw = 1;
+        return 1;
+    }
+    /* the drill, for the host's scripts: drill ROOT SCALE SHAPE [HAND]; dgo: the round starts; dnote N: a note of the
+     * player's, through the same door as the keys and the piano */
+    if (!strcmp(cmd, "drill")) {
+        ds.root_idx = (uint8_t)(atoi(a) % 12);
+        if (b[0])
+            ds.scale_idx = (uint8_t)(atoi(b) % NSCALES);
+        if (c[0])
+            ds.shape = (uint8_t)(atoi(c) % DRILL_NUM_SHAPES);
+        if (d[0])
+            ds.hand = (uint8_t)(atoi(d) ? 1 : 0);
+        drill_setup();
+        ui.topic = T_BASICS;
+        ui_go(SCR_DRILL);
+        return 1;
+    }
+    if (!strcmp(cmd, "dgo")) {
+        if (ui.screen == SCR_DRILL)
+            drill_play();
+        return 1;
+    }
+    if (!strcmp(cmd, "dnote")) {
+        if (ui.screen == SCR_DRILL)
+            note_in(atoi(a), 100, 1, 1);
+        return 1;
+    }
+    if (!strcmp(cmd, "doff")) {
+        if (ui.screen == SCR_DRILL)
+            note_in(atoi(a), 0, 0, 1);
         return 1;
     }
     return 0;

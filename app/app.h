@@ -16,8 +16,8 @@
 int theory_ble_off(void);
 
 /* the store: the settings and records, the panel calibration (the platform's), Bluetooth's address and pairing */
-enum { OBJ_SETTINGS, OBJ_PANEL, OBJ_BLE, OBJ_NOBJ };
-#define APP_STORE_MAP {0xFC000u, 0xDC000u, 0xDE000u}
+enum { OBJ_SETTINGS, OBJ_PANEL, OBJ_BLE, OBJ_DRILL, OBJ_NOBJ };
+#define APP_STORE_MAP {0xFC000u, 0xDC000u, 0xDE000u, 0xDA000u}
 
 /* the contract: the platform calls these */
 void app_init(void);

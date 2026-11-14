@@ -27,6 +27,9 @@ enum {
     S_H_STAFF, S_CLEF_TEXT, S_POS_LINE, S_POS_SPACE, S_POS_ABOVE, S_POS_BELOW, S_POS_LEDGER_UP, S_POS_LEDGER_DOWN,
     S_POS_OVER_LEDGER, S_POS_UNDER_LEDGER, S_MIDDLE_C, S_OUT_OF_KEYS, S_Q_STAFF, S_Q_EARNOTE1, S_Q_EARNOTE2,
     S_Q_EARNOTES2, S_SET_CLEFS,
+    S_T_DRILL, S_T_DRILL_SUB, S_D_SHAPE0, S_D_SHAPE1, S_D_SHAPE2, S_D_READY, S_D_TURN, S_D_WAIT, S_D_GO, S_D_NEXT,
+    S_D_ERRS, S_D_UNEVEN_1, S_D_BEST, S_H_DRILL, S_D_CLEAN, S_D_FADE, S_D_TURNSLOW, S_D_ERRORS, S_D_UNEVEN, S_D_WATCH,
+    S_D_PASS, S_D_STEADY,
     NSTR
 };
 
@@ -288,28 +291,52 @@ static const char *const STR[NSTR][NLANGS] = {
     [S_Q_EARNOTES2] = {"Suona le 2 note, in ordine", "Play the 2 notes, in order", "Toca las 2 notas, en orden",
                        "Spiel die 2 Töne der Reihe nach", "Joue les 2 notes, dans l'ordre"},
     [S_SET_CLEFS] = {"Chiavi", "Clefs", "Claves", "Schlüssel", "Clés"},
+    [S_T_DRILL] = {"Esercizio", "Drill", "Ejercicio", "Übung", "Exercice"},
+    [S_T_DRILL_SUB] = {"scale, dita, tempo", "scales, fingers, tempo", "escalas, dedos, tempo",
+                       "Tonleitern, Finger, Tempo", "gammes, doigts, tempo"},
+    [S_D_SHAPE0] = {"1 ottava", "1 octave", "1 octava", "1 Oktave", "1 octave"},
+    [S_D_SHAPE1] = {"2 ottave", "2 octaves", "2 octavas", "2 Oktaven", "2 octaves"},
+    [S_D_SHAPE2] = {"2 ott. su", "2 oct. up", "2 oct. sube", "2 Okt. auf", "2 oct. mont."},
+    [S_D_READY] = {"PREMI PLAY", "PRESS PLAY", "PULSA PLAY", "PLAY DRÜCKEN", "APPUIE PLAY"},
+    [S_D_TURN] = {" POLL.", " TURN", " PULG.", " DAUM.", " POUCE"},
+    [S_D_WAIT] = {"ASPETTA", "WAIT", "ESPERA", "WARTE", "ATTENDS"},
+    [S_D_GO] = {"SUONA", "PLAY", "TOCA", "SPIEL", "JOUE"},
+    [S_D_NEXT] = {"Poi:", "Next:", "Luego:", "Dann:", "Puis:"},
+    [S_D_ERRS] = {"err", "err", "err", "Fehler", "err"},
+    [S_D_UNEVEN_1] = {"irreg", "uneven", "irreg.", "unreg.", "irrég."},
+    [S_D_BEST] = {"best", "best", "mejor", "best", "mieux"},
+    [S_H_DRILL] = {"PLAY  EDIT  REC  SAVE", "PLAY  EDIT  REC  SAVE", "PLAY  EDIT  REC  SAVE",
+                   "PLAY  EDIT  REC  SAVE", "PLAY  EDIT  REC  SAVE"},
+    [S_D_CLEAN] = {"PULITO", "CLEAN", "LIMPIO", "SAUBER", "PROPRE"},
+    [S_D_FADE] = {"PULITO -AIUTO", "CLEAN -HELP", "LIMPIO -AYUDA", "SAUBER -HILFE", "PROPRE -AIDE"},
+    [S_D_TURNSLOW] = {"POLLICE LENTO", "TURN SLOW", "PULGAR LENTO", "DAUMEN LANGSAM", "POUCE LENT"},
+    [S_D_ERRORS] = {"ERRORI", "ERRORS", "ERRORES", "FEHLER", "ERREURS"},
+    [S_D_UNEVEN] = {"IRREGOLARE", "UNEVEN", "IRREGULAR", "UNREGELM.", "IRRÉGULIER"},
+    [S_D_WATCH] = {"CURA IL POLLICE", "WATCH THE THUMB", "CUIDA EL PULGAR", "DAUMEN ACHTEN", "SOIGNE LE POUCE"},
+    [S_D_PASS] = {"PROVA OK", "STAGE PASS", "PRUEBA OK", "PRÜFUNG OK", "ÉPREUVE OK"},
+    [S_D_STEADY] = {"COSTANTE", "STEADY", "CONSTANTE", "GLEICHMÄSSIG", "RÉGULIER"},
 };
 #define S(k) (STR[k][th_ui])
 
 /* the lists */
-static const char *const TOPIC_NAME[NLANGS][9] = {
-    {"Le basi", "Pentagramma", "Intervalli", "Scale", "Modi", "Accordi", "Armonia", "Tonalità", "Scale del mondo"},
-    {"Basics", "The staff", "Intervals", "Scales", "Modes", "Chords", "Harmony", "Keys", "World scales"},
-    {"Lo básico", "Pentagrama", "Intervalos", "Escalas", "Modos", "Acordes", "Armonía", "Tonalidades", "Escalas del mundo"},
-    {"Grundlagen", "Notensystem", "Intervalle", "Tonleitern", "Modi", "Akkorde", "Harmonik", "Tonarten", "Skalen der Welt"},
-    {"Les bases", "La portée", "Intervalles", "Gammes", "Modes", "Accords", "Harmonie", "Tonalités", "Gammes du monde"},
+static const char *const TOPIC_NAME[NLANGS][10] = {
+    {"Le basi", "Pentagramma", "Intervalli", "Scale", "Modi", "Accordi", "Armonia", "Tonalità", "Scale del mondo", "Esercizio"},
+    {"Basics", "The staff", "Intervals", "Scales", "Modes", "Chords", "Harmony", "Keys", "World scales", "Drill"},
+    {"Lo básico", "Pentagrama", "Intervalos", "Escalas", "Modos", "Acordes", "Armonía", "Tonalidades", "Escalas del mundo", "Ejercicio"},
+    {"Grundlagen", "Notensystem", "Intervalle", "Tonleitern", "Modi", "Akkorde", "Harmonik", "Tonarten", "Skalen der Welt", "Übung"},
+    {"Les bases", "La portée", "Intervalles", "Gammes", "Modes", "Accords", "Harmonie", "Tonalités", "Gammes du monde", "Exercice"},
 };
-static const char *const TOPIC_SUB[NLANGS][9] = {
+static const char *const TOPIC_SUB[NLANGS][10] = {
     {"note, toni, alterazioni", "leggere le note, 7 chiavi", "distanze tra due note", "maggiore, minori, blues...", "21 modi: maggiore, melodica, armonica",
-     "triadi e settime", "accordi su ogni grado", "circolo delle quinte", "Giappone, India, Est Europa..."},
+     "triadi e settime", "accordi su ogni grado", "circolo delle quinte", "Giappone, India, Est Europa...", "scale, dita, tempo"},
     {"notes, steps, sharps", "reading notes, 7 clefs", "distance between notes", "major, minors, blues...", "21 modes: major, melodic, harmonic",
-     "triads and sevenths", "a chord on each degree", "circle of fifths", "Japan, India, Eastern Europe..."},
+     "triads and sevenths", "a chord on each degree", "circle of fifths", "Japan, India, Eastern Europe...", "scales, fingers, tempo"},
     {"notas, tonos, alteraciones", "leer notas, 7 claves", "distancia entre notas", "mayor, menores, blues...", "21 modos: mayor, melódica, armónica",
-     "tríadas y séptimas", "acordes en cada grado", "círculo de quintas", "Japón, India, Europa del Este..."},
+     "tríadas y séptimas", "acordes en cada grado", "círculo de quintas", "Japón, India, Europa del Este...", "escalas, dedos, tempo"},
     {"Töne, Schritte, Vorzeichen", "Noten lesen, 7 Schlüssel", "Abstand zweier Töne", "Dur, Moll, Blues...", "21 Modi: Dur, melodisch, harmonisch",
-     "Drei- und Vierklänge", "Akkorde jeder Stufe", "Quintenzirkel", "Japan, Indien, Osteuropa..."},
+     "Drei- und Vierklänge", "Akkorde jeder Stufe", "Quintenzirkel", "Japan, Indien, Osteuropa...", "Tonleitern, Finger, Tempo"},
     {"notes, tons, altérations", "lire les notes, 7 clés", "distance entre notes", "majeure, mineures, blues...", "21 modes : majeur, mélodique, harmonique",
-     "triades et septièmes", "un accord par degré", "cycle des quintes", "Japon, Inde, Europe de l'Est..."},
+     "triades et septièmes", "un accord par degré", "cycle des quintes", "Japon, Inde, Europe de l'Est...", "gammes, doigts, tempo"},
 };
 static const char *const QT_NAMES[NLANGS][12] = {
     {"Misto", "Nomi delle note", "Intervalli", "Scale", "Modi", "Accordi", "Gradi della scala",
