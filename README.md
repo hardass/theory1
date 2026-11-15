@@ -37,7 +37,7 @@ anything invented here.
 
 | Control | What it does |
 |---|---|
-| **SELECT** | the scale (the skill): the 22 scales of the lessons |
+| **SELECT** | the scale (the skill): major, natural minor, harmonic minor, melodic minor, major pentatonic, minor pentatonic |
 | **K1** / PRESETS | the key, round the circle of fifths |
 | **K2** | the shape: one octave, two octaves, or two octaves up only |
 | **K3** | the tempo in BPM - one note a beat, one click a note, 40 to 200 |
@@ -55,12 +55,10 @@ The four knobs' settings are on the screen, two columns: `K1: KEY A` `K2: SHAPE 
 - **Both hands and contrary motion** are piano modes. One MIDI channel cannot say which hand played, so those two show
   the fingering and the two keys and judge only the right hand - the limit is written down in
   [`docs/DRILL.md`](docs/DRILL.md) rather than hidden.
-- **Fingering** is shown for the seven-note scales (per key, per hand) and for the two pentatonic scales (from
-  pianoscales.org's chart, all twelve keys, both hands). Five- and six-note scales with no published chart - the blues,
-  the whole tone, the octatonic, the chromatic - show none: a wrong fingering teaches worse than no fingering.
-
-All 22 scales of the lessons are here, from the major to the thirteen scales of the world, and the classical melodic
-minor comes down as the natural minor.
+- **Only scales with a published fingering are on offer** - the six above. A scale can be learnt without a fingering,
+  but it cannot be practised without one, and this screen exists to practise: the blues scale (four sources, four
+  right-hand patterns), the whole tone, the octatonic, the chromatic and the world scales stay in the lessons, where
+  they are studied. The classical melodic minor comes down as the natural minor, as it should.
 
 ## Install
 

@@ -16,7 +16,7 @@ the root, K2..K4 the rest**. The hint line, the two legend columns and the heade
 
 | Control | What it does |
 |---|---|
-| **SELECT** | the scale (the skill): the 22 scales of the lessons |
+| **SELECT** | the scale (the skill): the six that have a published fingering |
 | **K1** / PRESETS | the key, round the circle of fifths |
 | **K2** | the shape: 1 octave up and down, 2 octaves up and down, 2 octaves up |
 | **K3** | the tempo, one BPM at a time (40..200) |
@@ -81,8 +81,10 @@ On the 27 keys there are only `RH` and `LH`: two hands on one small keyboard is 
 
 ## The sequence
 
-- The shape is built from `SCALES[]` in `theory.c`: the 22 scales of the lessons, from the major to the thirteen scales
-  of the world. Nothing is duplicated.
+- The shape is built from `SCALES[]` in `theory.c`, but the drill offers only the scales that have a published keyboard
+  fingering - six of them: major, natural minor, harmonic minor, melodic minor, and the two pentatonic scales. A scale
+  can be learnt without a fingering; it cannot be practised without one, and this screen exists to practise. The other
+  sixteen scales are still in the lessons, where they are studied rather than drilled.
 - The classical **melodic minor** comes down as the natural minor (its descent has its own semitone table); every other
   scale mirrors.
 - **Fingering** for the seven-note scales: one octave's table per key and hand, the top note capped with the little
@@ -92,10 +94,10 @@ On the 27 keys there are only `RH` and `LH`: two hands on one small keyboard is 
   all twelve keys, both hands, six values each (the five notes and the octave). There is no single accepted fingering
   for five-note scales - books differ -, but this is the one complete published chart for both hands that could be
   checked, so it is the one shown, with its source named.
-- **Nothing is shown** for the scales with neither a heptatonic table nor a chart: the blues scale, the whole tone, the
-  octatonic, the chromatic, and the world scales of five notes. Four sources give four different right-hand patterns for
-  the blues scale (`1-3-1-3-1-3`, `1-2-3-4-1-2-3`, `4-1-2-1-2-3`, `1-2-1-2-2-3`), so showing one would dress a habit as
-  a standard.
+- **The scales without a published fingering are not offered at all**: the blues scale, the whole tone, the octatonic,
+  the chromatic and the world scales. Four sources give four different right-hand patterns for the blues scale
+  (`1-3-1-3-1-3`, `1-2-3-4-1-2-3`, `4-1-2-1-2-3`, `1-2-1-2-2-3`), and the world scales would borrow the key's diatonic
+  table without any book backing it. They stay in the lessons; the drill only takes what it can teach.
 - **Turns** are derived, not hard-coded: a thumb under the fingers, or a finger over the thumb, is a turn. That is the
   single most common place a scale stalls, so a stumble there counts.
 

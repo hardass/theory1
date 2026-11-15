@@ -277,6 +277,22 @@ tap HOME
 wait 50
 expect screen 1
 
+# --- the scales on offer: the ones with a published fingering, six of them, and they wrap
+drill 0 0 0 0
+turn SELECT 1
+turn SELECT 1
+turn SELECT 1
+turn SELECT 1
+turn SELECT 1
+expect dscale 5
+turn SELECT 1
+expect dscale 0
+turn SELECT -1
+expect dscale 5
+tap HOME
+wait 50
+expect screen 1
+
 # --- the hand: RH, LH, and on a piano both and contrary; on the 27 keys only the two hands
 drill 0 0 0 0
 expect dhand 0

@@ -768,6 +768,24 @@ static drill_save_t ds;
 static uint8_t drill_dirty;                  /* a record or a setting moved: the store is written on the way out */
 #define DS_MAGIC 0x314C5244u                 /* "DRL1" */
 static const uint8_t DRILL_PC[12] = {0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5};   /* the circle of fifths */
+/* the scales the drill offers: only the ones with a published keyboard fingering. The lessons teach the rest - a scale
+ * can be learnt without a fingering, but it cannot be practised without one, and this screen exists to practise */
+static const uint8_t DRILL_SCALES[] = {SC_MAJOR, SC_NATMINOR, SC_HARMMINOR, SC_MELMINOR, SC_PENTA_MAJ, SC_PENTA_MIN};
+#define N_DRILL_SCALES ((int)(sizeof DRILL_SCALES / sizeof DRILL_SCALES[0]))
+
+static int drill_scale_in_list(int i)
+{
+    int k;
+    for (k = 0; k < N_DRILL_SCALES; k++)
+        if (DRILL_SCALES[k] == i)
+            return k;
+    return -1;
+}
+static uint8_t drill_scale_next(uint8_t cur, int d)
+{
+    int k = drill_scale_in_list(cur);
+    return DRILL_SCALES[(k < 0 ? 0 : k + d + N_DRILL_SCALES * 2) % N_DRILL_SCALES];
+}
 static uint32_t drill_blit;                  /* the next frame the drill asks for (the lights blink) */
 static uint32_t drill_prev_at;               /* when the example started, and whether it is still going */
 static uint8_t drill_prev_on;
@@ -779,7 +797,7 @@ static void drill_load(void)
     uint32_t i;
     uint8_t *p = (uint8_t *)&ds;
     int ok = plat_store_load(OBJ_DRILL, &ds, sizeof ds) == (int)sizeof ds;
-    ok = ok && ds.magic == DS_MAGIC && ds.ver == 2 && ds.root_idx < 12 && ds.scale_idx < NSCALES &&
+    ok = ok && ds.magic == DS_MAGIC && ds.ver == 2 && ds.root_idx < 12 && drill_scale_in_list(ds.scale_idx) >= 0 &&
          ds.shape < DRILL_NUM_SHAPES && ds.hand < NHANDS && ds.assist < NASSIST && ds.kb <= 1 &&
          ds.ioi_tol <= 2 && ds.bpm >= 40 && ds.bpm <= 200 && ds.sub >= 1 && ds.sub <= 4;
     if (!ok) {
@@ -791,6 +809,8 @@ static void drill_load(void)
         ds.sub = 1;
         ds.ioi_tol = 1;
     }
+    if (drill_scale_in_list(ds.scale_idx) < 0)
+        ds.scale_idx = (uint8_t)SC_MAJOR;
     drill_defaults(&dr);
 }
 
@@ -2880,7 +2900,7 @@ static void ui_encoder(int e, int d)
         break;
     case SCR_DRILL:
         if (e == EN_SELECT) {                /* the skill: which scale, as SELECT does in the lessons */
-            ds.scale_idx = (uint8_t)t1_wrap(ds.scale_idx + d, NSCALES);
+            ds.scale_idx = drill_scale_next(ds.scale_idx, d < 0 ? -1 : 1);
             drill_changed();
         } else if (e == EN_K1 || e == EN_PRESET) {   /* the root */
             ds.root_idx = (uint8_t)t1_wrap(ds.root_idx + d, 12);
@@ -3317,6 +3337,8 @@ int app_expect(const char *what, int *got)
         *got = dr.assist;
     else if (!strcmp(what, "dmiss"))
         *got = dr.misses;
+    else if (!strcmp(what, "dscale"))
+        *got = ds.scale_idx;
     else if (!strcmp(what, "dhand"))
         *got = ds.hand;
     else if (!strcmp(what, "dtry"))
@@ -3480,7 +3502,7 @@ int app_host_cmd(const char *cmd, const char *a, const char *b, const char *c, c
     if (!strcmp(cmd, "drill")) {
         ds.root_idx = (uint8_t)(atoi(a) % 12);
         if (b[0])
-            ds.scale_idx = (uint8_t)(atoi(b) % NSCALES);
+            ds.scale_idx = (uint8_t)(drill_scale_in_list(atoi(b)) >= 0 ? atoi(b) : (int)SC_MAJOR);
         if (c[0])
             ds.shape = (uint8_t)(atoi(c) % DRILL_NUM_SHAPES);
         if (d[0])
