@@ -106,6 +106,7 @@ app/build/host/theory1_host app/tests/drill.txt app/build/test
 | `app/texts.c` | every word on the screen, in five languages |
 | `app/tests/drill_test.c`, `app/tests/drill.txt` | the engine's checks and the drill in the host simulator |
 | `docs/DRILL.md` | the drill's design: controls, judgement, ladder, tests, and where it departs from its original specification |
+| `docs/PLAN.md` | what could come next - arpeggios, Hanon patterns, chord progressions - with what each costs and what it cannot do |
 | `base/` | [fm1-base](https://github.com/charlesvestal/fm1-base) with [felucca-bsp](https://github.com/hugelton/felucca-bsp), as submodules |
 
 ## Licence and credits
